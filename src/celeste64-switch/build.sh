@@ -18,13 +18,17 @@ cfg="$MONO_NX_ROOT/src/mono/System.Private.CoreLib/src/ILLink"
 # These directories contain only generated linker output and packaged metadata.
 rm -rf output
 rm -f romfs/*.dll
+gltf_runtime=SharpGLTF.Runtime
+if [[ ,${CELESTE64_OPTIMIZATIONS:-}, == *,animation,* ]]; then
+ gltf_runtime=SharpGLTF.Runtime.Switch
+fi
 dotnet "$illink" -x "$cfg/ILLink.Descriptors.xml" -x "$cfg/ILLink.LinkAttributes.xml" \
  --feature System.Resources.UseSystemResourceKeys true \
  -d "$MONO_NX_ROOT/artifacts/bin/mono/libnx.arm64.Debug" \
  -d "$MONO_NX_ROOT/artifacts/bin/runtime/net9.0-libnx-Debug-arm64" \
  -d managed/Game/bin/Release/net9.0 --trim-mode link \
  -a managed/Game/bin/Release/net9.0/Celeste64.Switch.dll all \
- --action copy Foster.Framework --action copy SharpGLTF.Core --action copy SharpGLTF.Runtime \
+ --action copy Foster.Framework --action copy SharpGLTF.Core --action copy "$gltf_runtime" \
  --action copy Sledge.Formats --action copy Sledge.Formats.Map > logs/linker.log 2>&1
 compiler="$MONO_NX_ROOT/artifacts/bin/mono/linux.x64.Debug/cross/linux-x64/libnx-arm64/mono-aot-cross"
 aot_optimizations=()
