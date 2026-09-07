@@ -1,7 +1,7 @@
 """Semantics-preserving source adaptations for the Switch AOT backend."""
 
 def optimize(out, port, game, foster, names):
-    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep', 'glcache', 'hair', 'textures'}
+    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep', 'glcache', 'hair', 'textures', 'materialrefs'}
     if unknown:
         raise ValueError(f'Unknown source optimizations: {unknown}')
     if 'late' in names and 'spatial' not in names:
@@ -10,6 +10,8 @@ def optimize(out, port, game, foster, names):
         raise ValueError('frustum requires spatial')
     if 'textures' in names and 'glcache' not in names:
         raise ValueError('textures requires glcache')
+    if 'materialrefs' in names and 'material' not in names:
+        raise ValueError('materialrefs requires material')
 
     def replace(text, old, new, count=1):
         assert text.count(old) == count, (old, text.count(old), count)
@@ -79,6 +81,9 @@ def optimize(out, port, game, foster, names):
         dest.write_text(text)
         project = out / 'managed/Foster/Foster.Framework.csproj'
         project.write_text(replace(project.read_text(), ' Exclude="', ' Exclude="' + str(source) + ';'))
+    if 'materialrefs' in names:
+        from optimizations.materialrefs import optimize_materialrefs
+        optimize_materialrefs(out, replace)
     if 'uniforms' in names:
         from optimizations.uniforms import optimize_uniforms
         optimize_uniforms(out, port, foster, replace)
