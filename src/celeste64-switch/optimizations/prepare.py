@@ -1,7 +1,7 @@
 """Semantics-preserving source adaptations for the Switch AOT backend."""
 
 def optimize(out, port, game, foster, names):
-    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep', 'glcache', 'hair', 'textures', 'materialrefs', 'modelsort', 'hairmesh', 'rendermath', 'nativemath', 'imagebytes', 'nativehair', 'snowphase'}
+    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep', 'glcache', 'hair', 'textures', 'materialrefs', 'modelsort', 'hairmesh', 'rendermath', 'nativemath', 'imagebytes', 'nativehair', 'snowphase', 'gridwalk'}
     if unknown:
         raise ValueError(f'Unknown source optimizations: {unknown}')
     if 'late' in names and 'spatial' not in names:
@@ -18,6 +18,8 @@ def optimize(out, port, game, foster, names):
         raise ValueError('nativehair requires hair, hairmesh and rendermath')
     if 'snowphase' in names and 'snow' not in names:
         raise ValueError('snowphase requires snow')
+    if 'gridwalk' in names and 'collision' not in names:
+        raise ValueError('gridwalk requires collision')
 
     def replace(text, old, new, count=1):
         assert text.count(old) == count, (old, text.count(old), count)
@@ -90,6 +92,9 @@ def optimize(out, port, game, foster, names):
         text = replace(text, 'already.Add(it);', 'it.GridQueryOwner = queryOwner;\n                    it.GridQueryStamp = queryStamp;')
         text = replace(text, 'Pool.Return(already);', '')
         (out / 'managed/Game/SolidGridPartition.cs').write_text(text)
+    if 'gridwalk' in names:
+        from optimizations.gridwalk import optimize_gridwalk
+        optimize_gridwalk(out, replace)
     if 'sprites' in names:
         override('Graphics/SpriteRenderer.cs', [('spriteIndices.Clear();', 'bool indicesGrew = false;'), ('foreach (var board in sprites)', 'foreach (ref readonly var board in CollectionsMarshal.AsSpan(sprites))'), ('spriteIndices.Add(i + 0);\n\t\t\tspriteIndices.Add(i + 1);\n\t\t\tspriteIndices.Add(i + 2);\n\t\t\tspriteIndices.Add(i + 0);\n\t\t\tspriteIndices.Add(i + 2);\n\t\t\tspriteIndices.Add(i + 3);', 'if (spriteIndices.Count < (i / 4 + 1) * 6)\n            {\n                spriteIndices.Add(i + 0);\n                spriteIndices.Add(i + 1);\n                spriteIndices.Add(i + 2);\n                spriteIndices.Add(i + 0);\n                spriteIndices.Add(i + 2);\n                spriteIndices.Add(i + 3);\n                indicesGrew = true;\n            }'), ('spriteMesh.SetIndices<int>(CollectionsMarshal.AsSpan(spriteIndices));', 'if (indicesGrew) spriteMesh.SetIndices<int>(CollectionsMarshal.AsSpan(spriteIndices));')])
     if 'material' in names:
