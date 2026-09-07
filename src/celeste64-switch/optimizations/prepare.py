@@ -1,7 +1,7 @@
 """Semantics-preserving source adaptations for the Switch AOT backend."""
 
 def optimize(out, port, game, foster, names):
-    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep'}
+    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep', 'glcache'}
     if unknown:
         raise ValueError(f'Unknown source optimizations: {unknown}')
     if 'late' in names and 'spatial' not in names:
@@ -77,3 +77,6 @@ def optimize(out, port, game, foster, names):
     if 'uniforms' in names:
         from optimizations.uniforms import optimize_uniforms
         optimize_uniforms(out, port, foster, replace)
+    if 'glcache' in names:
+        from optimizations.glcache import optimize_glcache
+        optimize_glcache(out, replace)
