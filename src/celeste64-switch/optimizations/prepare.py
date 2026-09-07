@@ -1,7 +1,7 @@
 """Semantics-preserving source adaptations for the Switch AOT backend."""
 
 def optimize(out, port, game, foster, names):
-    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation'}
+    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms'}
     if unknown:
         raise ValueError(f'Unknown source optimizations: {unknown}')
     if 'late' in names and 'spatial' not in names:
@@ -68,3 +68,6 @@ def optimize(out, port, game, foster, names):
         dest.write_text(text)
         project = out / 'managed/Foster/Foster.Framework.csproj'
         project.write_text(replace(project.read_text(), ' Exclude="', ' Exclude="' + str(source) + ';'))
+    if 'uniforms' in names:
+        from optimizations.uniforms import optimize_uniforms
+        optimize_uniforms(out, port, foster, replace)
