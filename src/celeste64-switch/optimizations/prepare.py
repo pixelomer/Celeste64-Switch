@@ -1,7 +1,7 @@
 """Semantics-preserving source adaptations for the Switch AOT backend."""
 
 def optimize(out, port, game, foster, names):
-    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep', 'glcache', 'hair', 'textures', 'materialrefs', 'modelsort', 'hairmesh', 'rendermath', 'nativemath', 'imagebytes', 'nativehair', 'snowphase', 'gridwalk', 'imagelifetime'}
+    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep', 'glcache', 'hair', 'textures', 'materialrefs', 'modelsort', 'hairmesh', 'rendermath', 'nativemath', 'imagebytes', 'nativehair', 'snowphase', 'gridwalk', 'imagelifetime', 'matrixbindings'}
     if unknown:
         raise ValueError(f'Unknown source optimizations: {unknown}')
     if 'late' in names and 'spatial' not in names:
@@ -20,6 +20,8 @@ def optimize(out, port, game, foster, names):
         raise ValueError('snowphase requires snow')
     if 'gridwalk' in names and 'collision' not in names:
         raise ValueError('gridwalk requires collision')
+    if 'matrixbindings' in names and 'materialrefs' not in names:
+        raise ValueError('matrixbindings requires materialrefs')
 
     def replace(text, old, new, count=1):
         assert text.count(old) == count, (old, text.count(old), count)
@@ -119,6 +121,9 @@ def optimize(out, port, game, foster, names):
     if 'materialrefs' in names:
         from optimizations.materialrefs import optimize_materialrefs
         optimize_materialrefs(out, replace)
+    if 'matrixbindings' in names:
+        from optimizations.matrixbindings import optimize_matrixbindings
+        optimize_matrixbindings(out, override, replace)
     if 'uniforms' in names:
         from optimizations.uniforms import optimize_uniforms
         optimize_uniforms(out, port, foster, replace)
