@@ -1,7 +1,7 @@
 """Semantics-preserving source adaptations for the Switch AOT backend."""
 
 def optimize(out, port, game, foster, names):
-    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep', 'glcache', 'hair', 'textures', 'materialrefs', 'modelsort', 'hairmesh', 'rendermath', 'nativemath', 'imagebytes', 'nativehair'}
+    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep', 'glcache', 'hair', 'textures', 'materialrefs', 'modelsort', 'hairmesh', 'rendermath', 'nativemath', 'imagebytes', 'nativehair', 'snowphase'}
     if unknown:
         raise ValueError(f'Unknown source optimizations: {unknown}')
     if 'late' in names and 'spatial' not in names:
@@ -16,6 +16,8 @@ def optimize(out, port, game, foster, names):
         raise ValueError('nativemath requires rendermath')
     if 'nativehair' in names and (not {'hair', 'hairmesh', 'rendermath'} <= set(names)):
         raise ValueError('nativehair requires hair, hairmesh and rendermath')
+    if 'snowphase' in names and 'snow' not in names:
+        raise ValueError('snowphase requires snow')
 
     def replace(text, old, new, count=1):
         assert text.count(old) == count, (old, text.count(old), count)
@@ -42,6 +44,9 @@ def optimize(out, port, game, foster, names):
     if 'snow' in names:
         from optimizations.snow import optimize_snow
         optimize_snow(override)
+    if 'snowphase' in names:
+        from optimizations.snowphase import optimize_snowphase
+        optimize_snowphase(override)
     if 'hair' in names:
         from optimizations.hair import optimize_hair
         optimize_hair(override)
