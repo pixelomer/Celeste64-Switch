@@ -9,6 +9,8 @@ def optimize_animation(out, port, replace):
     assert subprocess.check_output(['git', '-C', str(upstream), 'rev-parse', 'HEAD'], text=True).strip() == COMMIT
     dest = out / 'managed/SharpGLTF'
     dest.mkdir(exist_ok=True)
+    for generated in dest.glob('*.cs'):
+        generated.unlink()
     for source in (upstream / 'src/SharpGLTF.Runtime/Runtime').glob('*.cs'):
         text = source.read_text(encoding='utf-8-sig')
         if source.name == 'NodeTemplate.cs':

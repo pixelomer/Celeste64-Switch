@@ -1,7 +1,7 @@
 """Semantics-preserving source adaptations for the Switch AOT backend."""
 
 def optimize(out, port, game, foster, names):
-    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep', 'glcache', 'hair', 'textures', 'materialrefs', 'modelsort', 'hairmesh', 'rendermath', 'nativemath', 'imagebytes', 'nativehair', 'snowphase', 'gridwalk', 'imagelifetime', 'matrixbindings'}
+    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep', 'glcache', 'hair', 'textures', 'materialrefs', 'modelsort', 'hairmesh', 'rendermath', 'nativemath', 'imagebytes', 'nativehair', 'snowphase', 'gridwalk', 'imagelifetime', 'matrixbindings', 'skinbindings', 'animationmath', 'morphneutral'}
     if unknown:
         raise ValueError(f'Unknown source optimizations: {unknown}')
     if 'late' in names and 'spatial' not in names:
@@ -22,6 +22,12 @@ def optimize(out, port, game, foster, names):
         raise ValueError('gridwalk requires collision')
     if 'matrixbindings' in names and 'materialrefs' not in names:
         raise ValueError('matrixbindings requires materialrefs')
+    if 'skinbindings' in names and 'animation' not in names:
+        raise ValueError('skinbindings requires animation')
+    if 'animationmath' in names and (not {'animation', 'nativemath'} <= set(names)):
+        raise ValueError('animationmath requires animation and nativemath')
+    if 'morphneutral' in names and 'animation' not in names:
+        raise ValueError('morphneutral requires animation')
 
     def replace(text, old, new, count=1):
         assert text.count(old) == count, (old, text.count(old), count)
@@ -48,6 +54,15 @@ def optimize(out, port, game, foster, names):
     if 'animation' in names:
         from optimizations.animation import optimize_animation
         optimize_animation(out, port, replace)
+    if 'skinbindings' in names:
+        from optimizations.skinbindings import optimize_skinbindings
+        optimize_skinbindings(out, replace)
+    if 'animationmath' in names:
+        from optimizations.animationmath import optimize_animationmath
+        optimize_animationmath(out, port, replace)
+    if 'morphneutral' in names:
+        from optimizations.morphneutral import optimize_morphneutral
+        optimize_morphneutral(out, port, replace)
     if 'snow' in names:
         from optimizations.snow import optimize_snow
         optimize_snow(override)
