@@ -56,6 +56,8 @@ make = make.replace('-DDLSHIM_DISABLE=1', f'-DDLSHIM_DISABLE=1 -DFOSTER_OPENGL_E
 make = make.replace('-pthread -lnx -lm -lstdc++', '-Wl,--start-group -lSDL2 -lEGL -lglapi -ldrm_nouveau -pthread -lnx -lm -lstdc++ -Wl,--end-group')
 (out / 'Makefile').write_text(make)
 (out / 'foster').mkdir(exist_ok=True)
+for generated in (out / 'foster').glob('switch_*.c'):
+    generated.unlink()
 for file in (foster / 'Platform/src').glob('*.c'):
     text = file.read_text().replace('SDL_GL_MULTISAMPLEBUFFERS, 1', 'SDL_GL_MULTISAMPLEBUFFERS, 0').replace('SDL_GL_MULTISAMPLESAMPLES, 4', 'SDL_GL_MULTISAMPLESAMPLES, 0')
     if file.name == 'foster_platform.c':
