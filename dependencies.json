@@ -1,0 +1,66 @@
+{
+  "sources": [
+    {
+      "name": "celeste64-v1.1.1",
+      "url": "https://github.com/EXOK/Celeste64.git",
+      "commit": "bfc7a3ba6f35d25bd11b4c4bad749398f70034e2"
+    },
+    {
+      "name": "celeste64-v1.2-research",
+      "url": "https://github.com/EXOK/Celeste64.git",
+      "commit": "6edfe1ebd2a21a6134d7675a28e357891025407e"
+    },
+    {
+      "name": "foster",
+      "url": "https://github.com/FosterFramework/Foster.git",
+      "commit": "a5b574f36e5d8928a4d47566c7b924140b653c85"
+    },
+    {
+      "name": "foster-0.1.18",
+      "url": "https://github.com/FosterFramework/Foster.git",
+      "commit": "351d20640cb6d6323a1490fa5f5254b8269f783c"
+    },
+    {
+      "name": "mono-nx",
+      "url": "https://github.com/exelix11/mono-nx.git",
+      "commit": "fec057748af9121d5cf363e772e817908d57c191"
+    },
+    {
+      "name": "sharpgltf-alpha0031",
+      "url": "https://github.com/vpenades/SharpGLTF.git",
+      "commit": "5a33d5452528d827ac55727f302d8a91a75c4186"
+    },
+    {
+      "name": "sharpgltf-1.0.5",
+      "url": "https://github.com/vpenades/SharpGLTF.git",
+      "commit": "4b28af2b6e5e30c6bade3f8baaf6b5e1a67ceb98"
+    },
+    {
+      "name": "spirv-cross",
+      "url": "https://github.com/KhronosGroup/SPIRV-Cross.git",
+      "commit": "be71ee8c12cd7dc5ca8fa9581f708c2e8561fe2a"
+    },
+    {
+      "name": "hl2-nx",
+      "url": "https://github.com/NaGaa95/hl2_nx.git",
+      "commit": "41e045ea275fcfae906009f165a6635725e9a08f"
+    }
+  ],
+  "mono_sdk": {
+    "url": "https://github.com/exelix11/mono-nx/releases/download/rel-3/mono-nx-sdk-linux-x64.zip",
+    "sha256": "3248d136503e50af337b0ba373771d471fb48a85bf777b5010e570f47de2c098"
+  },
+  "fmod": {
+    "version": "2.02.18",
+    "platforms": {
+      "android": {
+        "filename": "fmodstudioapi20218android.tar.gz",
+        "sha256": "841ee6d4ed3a5696561e4a368462b77e9ec02fdd215cfac2034b917f4d34a407"
+      },
+      "linux": {
+        "filename": "fmodstudioapi20218linux.tar.gz",
+        "sha256": "526c29099c3a4608eafb6c71eb9c10f9a2dd71f6fdb6ad96c06eb763e678c7dc"
+      }
+    }
+  }
+}
