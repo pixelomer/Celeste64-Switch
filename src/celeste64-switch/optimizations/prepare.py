@@ -1,7 +1,7 @@
 """Semantics-preserving source adaptations for the Switch AOT backend."""
 
 def optimize(out, port, game, foster, names):
-    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep', 'glcache', 'hair', 'textures', 'materialrefs', 'modelsort'}
+    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep', 'glcache', 'hair', 'textures', 'materialrefs', 'modelsort', 'hairmesh'}
     if unknown:
         raise ValueError(f'Unknown source optimizations: {unknown}')
     if 'late' in names and 'spatial' not in names:
@@ -41,6 +41,9 @@ def optimize(out, port, game, foster, names):
     if 'modelsort' in names:
         from optimizations.modelsort import optimize_modelsort
         optimize_modelsort(override)
+    if 'hairmesh' in names:
+        from optimizations.hairmesh import optimize_hairmesh
+        optimize_hairmesh(override)
     if 'renderprep' in names:
         from optimizations.renderprep import optimize_renderprep
         optimize_renderprep(override, game)

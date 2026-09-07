@@ -1,0 +1,2 @@
+def optimize_hairmesh(override):
+    override('Graphics/Hair.cs', [('hairVertices.Clear();', 'CollectionsMarshal.SetCount(hairVertices, nodes.Count * sphereVertices.Count);\n        var preparedVertices = CollectionsMarshal.AsSpan(hairVertices);'), ('var index = hairVertices.Count;', 'var index = i * sphereVertices.Count;\n            var vertex = index;'), ('hairVertices.Add(new(Vec3.Transform(vert.Pos, transform), Vec2.Zero, Vec3.One, vert.Normal));', 'preparedVertices[vertex++] = new(Vec3.Transform(vert.Pos, transform), Vec2.Zero, Vec3.One, vert.Normal);')])
