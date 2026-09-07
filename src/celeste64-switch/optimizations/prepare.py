@@ -1,7 +1,7 @@
 """Semantics-preserving source adaptations for the Switch AOT backend."""
 
 def optimize(out, port, game, foster, names):
-    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep', 'glcache', 'hair', 'textures', 'materialrefs', 'modelsort', 'hairmesh', 'rendermath', 'nativemath'}
+    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep', 'glcache', 'hair', 'textures', 'materialrefs', 'modelsort', 'hairmesh', 'rendermath', 'nativemath', 'imagebytes', 'nativehair'}
     if unknown:
         raise ValueError(f'Unknown source optimizations: {unknown}')
     if 'late' in names and 'spatial' not in names:
@@ -14,6 +14,8 @@ def optimize(out, port, game, foster, names):
         raise ValueError('materialrefs requires material')
     if 'nativemath' in names and 'rendermath' not in names:
         raise ValueError('nativemath requires rendermath')
+    if 'nativehair' in names and (not {'hair', 'hairmesh', 'rendermath'} <= set(names)):
+        raise ValueError('nativehair requires hair, hairmesh and rendermath')
 
     def replace(text, old, new, count=1):
         assert text.count(old) == count, (old, text.count(old), count)
@@ -31,6 +33,9 @@ def optimize(out, port, game, foster, names):
         if exclusion not in xml:
             xml = replace(xml, ' Exclude="', ' Exclude="' + exclusion)
         project.write_text(xml)
+    if 'imagebytes' in names:
+        from optimizations.imagebytes import optimize_imagebytes
+        optimize_imagebytes(out, replace, override)
     if 'animation' in names:
         from optimizations.animation import optimize_animation
         optimize_animation(out, port, replace)
@@ -55,6 +60,9 @@ def optimize(out, port, game, foster, names):
     if 'nativemath' in names:
         from optimizations.nativemath import optimize_nativemath
         optimize_nativemath(out, port)
+    if 'nativehair' in names:
+        from optimizations.nativehair import optimize_nativehair
+        optimize_nativehair(out, port, override)
     if 'frustum' in names:
         override('Spatial/BoundingBox.cs', [('public readonly bool Contains(in Vec3 point)', 'public readonly bool IsInFrontOf(in Plane plane)\n    {\n        Vec3 negativeVertex;\n        negativeVertex.X = plane.Normal.X >= 0 ? Min.X : Max.X;\n        negativeVertex.Y = plane.Normal.Y >= 0 ? Min.Y : Max.Y;\n        negativeVertex.Z = plane.Normal.Z >= 0 ? Min.Z : Max.Z;\n        return Vec3.Dot(plane.Normal, negativeVertex) + plane.D > 0;\n    }\n\n    public readonly bool Contains(in Vec3 point)')])
         override('Spatial/BoundingFrustum.cs', [('box.Intersects(planes[i]) == PlaneIntersectionType.Front', 'box.IsInFrontOf(planes[i])')])
