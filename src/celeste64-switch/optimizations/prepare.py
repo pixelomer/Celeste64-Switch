@@ -1,7 +1,7 @@
 """Semantics-preserving source adaptations for the Switch AOT backend."""
 
 def optimize(out, port, game, foster, names):
-    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep', 'glcache', 'hair', 'textures', 'materialrefs', 'modelsort', 'hairmesh', 'rendermath', 'nativemath', 'imagebytes', 'nativehair', 'snowphase', 'gridwalk', 'imagelifetime', 'matrixbindings', 'skinbindings', 'animationmath', 'morphneutral'}
+    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep', 'glcache', 'hair', 'textures', 'materialrefs', 'modelsort', 'hairmesh', 'rendermath', 'nativemath', 'imagebytes', 'nativehair', 'snowphase', 'gridwalk', 'imagelifetime', 'matrixbindings', 'skinbindings', 'animationmath', 'morphneutral', 'collisionmath'}
     if unknown:
         raise ValueError(f'Unknown source optimizations: {unknown}')
     if 'late' in names and 'spatial' not in names:
@@ -115,6 +115,9 @@ def optimize(out, port, game, foster, names):
     if 'gridwalk' in names:
         from optimizations.gridwalk import optimize_gridwalk
         optimize_gridwalk(out, replace)
+    if 'collisionmath' in names:
+        from optimizations.collisionmath import optimize_collisionmath
+        optimize_collisionmath(out, port, game, override)
     if 'sprites' in names:
         override('Graphics/SpriteRenderer.cs', [('spriteIndices.Clear();', 'bool indicesGrew = false;'), ('foreach (var board in sprites)', 'foreach (ref readonly var board in CollectionsMarshal.AsSpan(sprites))'), ('spriteIndices.Add(i + 0);\n\t\t\tspriteIndices.Add(i + 1);\n\t\t\tspriteIndices.Add(i + 2);\n\t\t\tspriteIndices.Add(i + 0);\n\t\t\tspriteIndices.Add(i + 2);\n\t\t\tspriteIndices.Add(i + 3);', 'if (spriteIndices.Count < (i / 4 + 1) * 6)\n            {\n                spriteIndices.Add(i + 0);\n                spriteIndices.Add(i + 1);\n                spriteIndices.Add(i + 2);\n                spriteIndices.Add(i + 0);\n                spriteIndices.Add(i + 2);\n                spriteIndices.Add(i + 3);\n                indicesGrew = true;\n            }'), ('spriteMesh.SetIndices<int>(CollectionsMarshal.AsSpan(spriteIndices));', 'if (indicesGrew) spriteMesh.SetIndices<int>(CollectionsMarshal.AsSpan(spriteIndices));')])
     if 'material' in names:
