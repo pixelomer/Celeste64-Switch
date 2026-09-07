@@ -1,7 +1,7 @@
 """Semantics-preserving source adaptations for the Switch AOT backend."""
 
 def optimize(out, port, game, foster, names):
-    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow'}
+    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep'}
     if unknown:
         raise ValueError(f'Unknown source optimizations: {unknown}')
     if 'late' in names and 'spatial' not in names:
@@ -31,6 +31,9 @@ def optimize(out, port, game, foster, names):
     if 'snow' in names:
         from optimizations.snow import optimize_snow
         optimize_snow(override)
+    if 'renderprep' in names:
+        from optimizations.renderprep import optimize_renderprep
+        optimize_renderprep(override, game)
     if 'frustum' in names:
         override('Spatial/BoundingBox.cs', [('public readonly bool Contains(in Vec3 point)', 'public readonly bool IsInFrontOf(in Plane plane)\n    {\n        Vec3 negativeVertex;\n        negativeVertex.X = plane.Normal.X >= 0 ? Min.X : Max.X;\n        negativeVertex.Y = plane.Normal.Y >= 0 ? Min.Y : Max.Y;\n        negativeVertex.Z = plane.Normal.Z >= 0 ? Min.Z : Max.Z;\n        return Vec3.Dot(plane.Normal, negativeVertex) + plane.D > 0;\n    }\n\n    public readonly bool Contains(in Vec3 point)')])
         override('Spatial/BoundingFrustum.cs', [('box.Intersects(planes[i]) == PlaneIntersectionType.Front', 'box.IsInFrontOf(planes[i])')])
