@@ -10,5 +10,6 @@ def optimize_shadowcache(out, port, game, override):
     method = method.replace('world.SolidRayCast(position, -Vec3.UnitZ, 1000, out var hit)', '(owner.PointShadowCache ??= new ShadowRayCache()).RayCast(world, position, out var hit)')
     override('Graphics/Sprite.cs', [('\tpublic static Sprite CreateFlat(', method + '\n\tpublic static Sprite CreateFlat(')])
     override('Scenes/World.cs', [('Sprite.CreateShadowSprite(this, actor.Position + Vec3.UnitZ, alpha)', 'Sprite.CreateCachedShadowSprite(this, actor, actor.Position + Vec3.UnitZ, alpha)')])
+    import os
     source = (port / 'optimizations/ShadowRayCache.cs').read_text()
     (out / 'managed/Game/ShadowRayCache.cs').write_text(source)

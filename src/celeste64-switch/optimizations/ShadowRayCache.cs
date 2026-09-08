@@ -59,6 +59,7 @@ internal sealed class ShadowRayCache
         }
         if (same)
         {
+            // VALIDATE_HIT
             
             hit = result;
             return found;
