@@ -1,7 +1,7 @@
 """Semantics-preserving source adaptations for the Switch AOT backend."""
 
 def optimize(out, port, game, foster, names):
-    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep', 'glcache', 'hair', 'textures', 'materialrefs', 'modelsort', 'hairmesh', 'rendermath', 'nativemath', 'imagebytes', 'nativehair', 'snowphase', 'gridwalk', 'imagelifetime', 'matrixbindings', 'skinbindings', 'animationmath', 'morphneutral', 'collisionmath', 'affinemath', 'triangleedges', 'spritefill', 'mathunroll', 'matrixpair', 'matrixcache', 'snowsprite', 'snowfill', 'shadowcache', 'skinspan', 'modelbits'}
+    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep', 'glcache', 'hair', 'textures', 'materialrefs', 'modelsort', 'hairmesh', 'rendermath', 'nativemath', 'imagebytes', 'nativehair', 'snowphase', 'gridwalk', 'imagelifetime', 'matrixbindings', 'skinbindings', 'animationmath', 'morphneutral', 'collisionmath', 'affinemath', 'triangleedges', 'spritefill', 'mathunroll', 'matrixpair', 'matrixcache', 'snowsprite', 'snowfill', 'shadowcache', 'skinspan', 'modelbits', 'spritefields'}
     if unknown:
         raise ValueError(f'Unknown source optimizations: {unknown}')
     if 'late' in names and 'spatial' not in names:
@@ -30,6 +30,8 @@ def optimize(out, port, game, foster, names):
         raise ValueError('morphneutral requires animation')
     if 'affinemath' in names and 'animationmath' not in names:
         raise ValueError('affinemath requires animationmath')
+    if 'spritefields' in names and 'spritefill' not in names:
+        raise ValueError('spritefields requires spritefill')
 
     def replace(text, old, new, count=1):
         assert text.count(old) == count, (old, text.count(old), count)
@@ -170,6 +172,9 @@ def optimize(out, port, game, foster, names):
             raise ValueError('spritefill requires sprites')
         from optimizations.spritefill import optimize_spritefill
         optimize_spritefill(override)
+    if 'spritefields' in names:
+        from optimizations.spritefields import optimize_spritefields
+        optimize_spritefields(override)
     if 'mathunroll' in names:
         if 'nativemath' not in names:
             raise ValueError('mathunroll requires nativemath')
