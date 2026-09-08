@@ -1,7 +1,7 @@
 """Semantics-preserving source adaptations for the Switch AOT backend."""
 
 def optimize(out, port, game, foster, names):
-    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep', 'glcache', 'hair', 'textures', 'materialrefs', 'modelsort', 'hairmesh', 'rendermath', 'nativemath', 'imagebytes', 'nativehair', 'snowphase', 'gridwalk', 'imagelifetime', 'matrixbindings', 'skinbindings', 'animationmath', 'morphneutral', 'collisionmath', 'affinemath', 'triangleedges', 'spritefill', 'mathunroll'}
+    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep', 'glcache', 'hair', 'textures', 'materialrefs', 'modelsort', 'hairmesh', 'rendermath', 'nativemath', 'imagebytes', 'nativehair', 'snowphase', 'gridwalk', 'imagelifetime', 'matrixbindings', 'skinbindings', 'animationmath', 'morphneutral', 'collisionmath', 'affinemath', 'triangleedges', 'spritefill', 'mathunroll', 'matrixpair', 'matrixcache', 'snowsprite'}
     if unknown:
         raise ValueError(f'Unknown source optimizations: {unknown}')
     if 'late' in names and 'spatial' not in names:
@@ -169,3 +169,18 @@ def optimize(out, port, game, foster, names):
             raise ValueError('mathunroll requires nativemath')
         from optimizations.mathunroll import optimize_mathunroll
         optimize_mathunroll(out)
+    if 'matrixpair' in names:
+        if not {'nativemath', 'renderprep'} <= set(names):
+            raise ValueError('matrixpair requires nativemath and renderprep')
+        from optimizations.matrixpair import optimize_matrixpair
+        optimize_matrixpair(out, port, override)
+    if 'matrixcache' in names:
+        if 'nativemath' not in names:
+            raise ValueError('matrixcache requires nativemath')
+        from optimizations.matrixcache import optimize_matrixcache
+        optimize_matrixcache(out, override)
+    if 'snowsprite' in names:
+        if 'snowphase' not in names:
+            raise ValueError('snowsprite requires snowphase')
+        from optimizations.snowsprite import optimize_snowsprite
+        optimize_snowsprite(override)
