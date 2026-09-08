@@ -1,7 +1,7 @@
 """Semantics-preserving source adaptations for the Switch AOT backend."""
 
 def optimize(out, port, game, foster, names):
-    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep', 'glcache', 'hair', 'textures', 'materialrefs', 'modelsort', 'hairmesh', 'rendermath', 'nativemath', 'imagebytes', 'nativehair', 'snowphase', 'gridwalk', 'imagelifetime', 'matrixbindings', 'skinbindings', 'animationmath', 'morphneutral', 'collisionmath', 'affinemath'}
+    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep', 'glcache', 'hair', 'textures', 'materialrefs', 'modelsort', 'hairmesh', 'rendermath', 'nativemath', 'imagebytes', 'nativehair', 'snowphase', 'gridwalk', 'imagelifetime', 'matrixbindings', 'skinbindings', 'animationmath', 'morphneutral', 'collisionmath', 'affinemath', 'triangleedges', 'spritefill'}
     if unknown:
         raise ValueError(f'Unknown source optimizations: {unknown}')
     if 'late' in names and 'spatial' not in names:
@@ -120,6 +120,9 @@ def optimize(out, port, game, foster, names):
     if 'gridwalk' in names:
         from optimizations.gridwalk import optimize_gridwalk
         optimize_gridwalk(out, replace)
+    if 'triangleedges' in names:
+        from optimizations.triangleedges import optimize_triangleedges
+        optimize_triangleedges(override)
     if 'collisionmath' in names:
         from optimizations.collisionmath import optimize_collisionmath
         optimize_collisionmath(out, port, game, override)
@@ -156,3 +159,8 @@ def optimize(out, port, game, foster, names):
     if 'textures' in names:
         from optimizations.textures import optimize_textures
         optimize_textures(out, replace)
+    if 'spritefill' in names:
+        if 'sprites' not in names:
+            raise ValueError('spritefill requires sprites')
+        from optimizations.spritefill import optimize_spritefill
+        optimize_spritefill(override)
