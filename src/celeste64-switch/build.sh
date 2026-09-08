@@ -45,3 +45,4 @@ cp "$ICU_NX_INSTALL_DIR/share/icu/77.1/icudt77l.dat" romfs/
 sed -n "s/Linking symbol: '\([^']*\)'\./STATIC_MONO_SYM(\1);/p" logs/aot.log > source/mono_symbols.h
 make -j4 > logs/native-build.log 2>&1
 sha256sum celeste64-switch.nro > SHA256SUMS
+python3 "$root/src/celeste64-switch/audio/package.py" "$build_dir"

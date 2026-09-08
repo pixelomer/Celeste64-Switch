@@ -77,7 +77,11 @@ optimizations = [name for name in os.environ.get('CELESTE64_OPTIMIZATIONS', '').
 if optimizations:
     from optimizations.prepare import optimize
     optimize(out, port, game, foster, optimizations)
+from audio.prepare import prepare_audio
+fm_flags = prepare_audio(root, out)
+makefile = out / 'Makefile'
+makefile.write_text(makefile.read_text().replace('-DDLSHIM_DISABLE=1', '-DDLSHIM_DISABLE=1' + fm_flags).replace('Celeste 64 (silent Switch)', 'Celeste 64'))
 source_files = {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(port.rglob('*')) if p.is_file() and '__pycache__' not in p.parts}
 (out / 'source-files.json').write_text(json.dumps(source_files, indent=2) + '\n')
-(out / 'build-options.json').write_text(json.dumps({'port_source_commit': subprocess.check_output(['git', '-C', str(root), 'rev-parse', 'HEAD'], text=True).strip(), 'port_source_files_sha256': hashlib.sha256((out / 'source-files.json').read_bytes()).hexdigest(), 'animation_runtime_commit': '5a33d5452528d827ac55727f302d8a91a75c4186' if 'animation' in optimizations else None, 'build_name': build_name, 'aot_optimize': os.environ.get('CELESTE64_AOT_OPTIMIZE') or 'compiler defaults', 'managed_configuration': 'Release', 'native_optimization': '-O2', 'mono_sdk_configuration': 'Debug', 'runtime_mode': 'MONO_AOT_MODE_FULL', 'aot_trampolines': {'specific': 65536, 'static_rgctx': 32768, 'imt': 4096, 'gsharedvt_arg': 8192}, 'source_optimizations': optimizations}, indent=2) + '\n')
+(out / 'build-options.json').write_text(json.dumps({'port_source_commit': subprocess.check_output(['git', '-C', str(root), 'rev-parse', 'HEAD'], text=True).strip(), 'port_source_files_sha256': hashlib.sha256((out / 'source-files.json').read_bytes()).hexdigest(), 'animation_runtime_commit': '5a33d5452528d827ac55727f302d8a91a75c4186' if 'animation' in optimizations else None, 'build_name': build_name, 'audio_backend': 'FMOD Android ARM64 2.02.18 via libnx', 'audio_inputs_sha256': hashlib.sha256((out / 'audio-inputs.json').read_bytes()).hexdigest(), 'aot_optimize': os.environ.get('CELESTE64_AOT_OPTIMIZE') or 'compiler defaults', 'managed_configuration': 'Release', 'native_optimization': '-O2', 'mono_sdk_configuration': 'Debug', 'runtime_mode': 'MONO_AOT_MODE_FULL', 'aot_trampolines': {'specific': 65536, 'static_rgctx': 32768, 'imt': 4096, 'gsharedvt_arg': 8192}, 'source_optimizations': optimizations}, indent=2) + '\n')
 print(out)

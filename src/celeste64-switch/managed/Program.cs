@@ -4,7 +4,7 @@ class Program
 {
     public static void Main(string[] args)
     {
-        Console.WriteLine("CELESTE64_SWITCH BOOT 1.1.1 A1 silent");
+        Console.WriteLine("CELESTE64_SWITCH BOOT 1.1.1 FMOD");
         CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
         CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
         // Native entry point creates SD directories before entering Mono.
@@ -15,6 +15,7 @@ class Program
             Console.WriteLine(e.ToString());
             try { File.WriteAllText("sdmc:/switch/celeste64/ErrorLog.txt", e.ToString()); } catch { }
         }
+        finally { Audio.Shutdown(); }
         Console.WriteLine("CELESTE64_SWITCH EXIT");
     }
 }
