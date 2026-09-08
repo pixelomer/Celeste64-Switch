@@ -176,13 +176,23 @@ static FMOD_RESULT F_CALLBACK output_mix(FMOD_OUTPUT_STATE *s) {
     svcSleepThread(deadline - now);
   deadline += BLOCK * 1000000000ULL / 48000;
   unsigned slot = next_buffer % BUFFERS;
+  unsigned timeout_count = 0;
   while (in_flight[slot]) {
     AudioOutBuffer *released = NULL;
     u32 n = 0;
     Result rc = audoutWaitPlayFinish(&released, &n, 200000000ULL);
     if (__atomic_load_n(&stopping, __ATOMIC_ACQUIRE))
       return FMOD_OK;
+    // HOME/sleep can outlast this wait. A timeout does not release the buffer
+    // or invalidate the device: keep ownership and retry until it is released.
+    // Retain a finite wait so output_stop can interrupt a stalled device.
+    if (R_VALUE(rc) == KERNELRESULT(TimedOut)) {
+      if (!timeout_count++)
+        c64_audio_log("C64_AUDIO waiting for output buffer (timeout)");
+      continue;
+    }
     if (R_FAILED(rc)) {
+      c64_audio_log("C64_AUDIO buffer wait failed: 0x%x", rc);
       __atomic_store_n(&output_error, (int)rc, __ATOMIC_RELAXED);
       return FMOD_ERR_OUTPUT_DRIVERCALL;
     }
@@ -192,6 +202,9 @@ static FMOD_RESULT F_CALLBACK output_mix(FMOD_OUTPUT_STATE *s) {
           in_flight[i] = 0;
     }
   }
+  if (timeout_count)
+    c64_audio_log("C64_AUDIO output recovered after %u timed out waits",
+                  timeout_count);
   FMOD_RESULT r = s->readfrommixer(s, mix_buffer, BLOCK);
   if (r) {
     __atomic_store_n(&output_error, (int)r, __ATOMIC_RELAXED);
