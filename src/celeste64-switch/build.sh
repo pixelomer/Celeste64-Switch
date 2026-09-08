@@ -38,7 +38,7 @@ fi
 : > logs/aot.log
 for dll in output/*.dll; do
  echo "AOT $dll"
- "$compiler" "${aot_optimizations[@]}" --path=output/ --aot=full,static,direct-icalls,direct-pinvoke,ntrampolines=65536,nrgctx-trampolines=32768,ngsharedvt-trampolines=8192,tool-prefix=aarch64-none-elf- "$dll" >> logs/aot.log 2>&1
+ "$compiler" "${aot_optimizations[@]}" --path=output/ --aot=full,static,direct-icalls,direct-pinvoke,ntrampolines=65536,nrgctx-trampolines=32768,nimt-trampolines=4096,ngsharedvt-trampolines=8192,tool-prefix=aarch64-none-elf- "$dll" >> logs/aot.log 2>&1
 done
 cp output/*.dll romfs/
 cp "$ICU_NX_INSTALL_DIR/share/icu/77.1/icudt77l.dat" romfs/
