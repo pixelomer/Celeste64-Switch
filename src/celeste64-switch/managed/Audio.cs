@@ -24,7 +24,21 @@ public static unsafe class Audio
         callbacks.Clear();
         if (initialized) { initialized = false; Check(Native.Shutdown()); }
     }
-    public static void Load(string path) => Check(Native.Load(path));
+    public static void Load(string path)
+    {
+        Check(Native.Load(path));
+#if SWITCH_AUDIO_VALIDATE
+        foreach (string music in new[] { "event:/music/mus_lvl1", "event:/music/mus_lvl1_bside" })
+        {
+            var test = Play(music);
+            if (!test) throw new InvalidOperationException("FMOD variant probe could not create " + music);
+            test.Set("at_baddy", 0);
+            test.Set("at_baddy", 1);
+            test.Stop();
+            Log.Info("C64_AUDIO PASS managed variant " + music);
+        }
+#endif
+    }
     public static void Unload() { callbacks.Clear(); Check(Native.Unload()); }
     public static void SetListener(in Camera camera)
     {
@@ -98,7 +112,9 @@ public readonly struct AudioHandle
         get { float v = 0; Audio.Check(Audio.Native.Volume(handle, ref v, 0)); return v; }
         set { Audio.Check(Audio.Native.Volume(handle, ref value, 1)); }
     }
-    public void Set(string parameter, float value) => Audio.Check(Audio.Native.Parameter(handle, parameter, value));
+    // Upstream deliberately ignores parameter errors: variants such as the B-side
+    // music do not define every parameter set by World.Update.
+    public void Set(string parameter, float value) => Audio.Native.Parameter(handle, parameter, value);
     public void Stop() => Audio.Check(Audio.Native.Stop(handle));
     public void SetCallback(Action callback) { if (handle != IntPtr.Zero) Audio.Watch(handle, callback); }
     public static implicit operator bool(AudioHandle audio) => Audio.Native.State(audio.handle) >= 0;
