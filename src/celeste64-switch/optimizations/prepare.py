@@ -1,7 +1,7 @@
 """Semantics-preserving source adaptations for the Switch AOT backend."""
 
 def optimize(out, port, game, foster, names):
-    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep', 'glcache', 'hair', 'textures', 'materialrefs', 'modelsort', 'hairmesh', 'rendermath', 'nativemath', 'imagebytes', 'nativehair', 'snowphase', 'gridwalk', 'imagelifetime', 'matrixbindings', 'skinbindings', 'animationmath', 'morphneutral', 'collisionmath'}
+    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep', 'glcache', 'hair', 'textures', 'materialrefs', 'modelsort', 'hairmesh', 'rendermath', 'nativemath', 'imagebytes', 'nativehair', 'snowphase', 'gridwalk', 'imagelifetime', 'matrixbindings', 'skinbindings', 'animationmath', 'morphneutral', 'collisionmath', 'affinemath'}
     if unknown:
         raise ValueError(f'Unknown source optimizations: {unknown}')
     if 'late' in names and 'spatial' not in names:
@@ -28,6 +28,8 @@ def optimize(out, port, game, foster, names):
         raise ValueError('animationmath requires animation and nativemath')
     if 'morphneutral' in names and 'animation' not in names:
         raise ValueError('morphneutral requires animation')
+    if 'affinemath' in names and 'animationmath' not in names:
+        raise ValueError('affinemath requires animationmath')
 
     def replace(text, old, new, count=1):
         assert text.count(old) == count, (old, text.count(old), count)
@@ -60,6 +62,9 @@ def optimize(out, port, game, foster, names):
     if 'animationmath' in names:
         from optimizations.animationmath import optimize_animationmath
         optimize_animationmath(out, port, replace)
+    if 'affinemath' in names:
+        from optimizations.affinemath import optimize_affinemath
+        optimize_affinemath(out, replace)
     if 'morphneutral' in names:
         from optimizations.morphneutral import optimize_morphneutral
         optimize_morphneutral(out, port, replace)
