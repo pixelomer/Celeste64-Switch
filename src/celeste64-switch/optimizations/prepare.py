@@ -1,7 +1,7 @@
 """Semantics-preserving source adaptations for the Switch AOT backend."""
 
 def optimize(out, port, game, foster, names):
-    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep', 'glcache', 'hair', 'textures', 'materialrefs', 'modelsort', 'hairmesh', 'rendermath', 'nativemath', 'imagebytes', 'nativehair', 'snowphase', 'gridwalk', 'imagelifetime', 'matrixbindings', 'skinbindings', 'animationmath', 'morphneutral', 'collisionmath', 'affinemath', 'triangleedges', 'spritefill', 'mathunroll', 'matrixpair', 'matrixcache', 'snowsprite', 'snowfill', 'shadowcache', 'skinspan', 'modelbits', 'spritefields', 'scalarbindings', 'drawableframe', 'proptransform'}
+    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep', 'glcache', 'hair', 'textures', 'materialrefs', 'modelsort', 'hairmesh', 'rendermath', 'nativemath', 'imagebytes', 'nativehair', 'snowphase', 'gridwalk', 'imagelifetime', 'matrixbindings', 'skinbindings', 'animationmath', 'morphneutral', 'collisionmath', 'affinemath', 'triangleedges', 'spritefill', 'mathunroll', 'matrixpair', 'matrixcache', 'snowsprite', 'snowfill', 'shadowcache', 'skinspan', 'modelbits', 'spritefields', 'scalarbindings', 'drawableframe', 'proptransform', 'nativecull'}
     if unknown:
         raise ValueError(f'Unknown source optimizations: {unknown}')
     if 'late' in names and 'spatial' not in names:
@@ -216,3 +216,8 @@ def optimize(out, port, game, foster, names):
     if 'drawableframe' in names:
         from optimizations.drawableframe import optimize_drawableframe
         optimize_drawableframe(out, port, override)
+    if 'nativecull' in names:
+        if 'frustum' not in names:
+            raise ValueError('nativecull requires frustum')
+        from optimizations.nativecull import optimize_nativecull
+        optimize_nativecull(out, port, override)
