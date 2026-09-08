@@ -48,6 +48,14 @@ patch(game / 'Source/Data/Save.cs', out / 'managed/Game/Save.cs', [('File.Copy(t
 patch(mono / 'native/aot/source/main.c', out / 'source/main.c', [('#include <unistd.h>', '#include <unistd.h>\n#include <sys/stat.h>'), ('    romfsInit();', '    mkdir("sdmc:/switch", 0777);\n    mkdir("sdmc:/switch/celeste64", 0777);\n    romfsInit();')])
 make = (mono / 'native/aot/Makefile').read_text().replace('aot_example', 'celeste64-switch')
 make = 'APP_TITLE := Celeste 64 (silent Switch)\nAPP_AUTHOR := Celeste Team / homebrew port\nAPP_VERSION := 1.1.1-a1\n' + make
+icon_input = root / 'artifacts/celeste64-switch-metadata/icon.jpg'
+icon = out / 'icon.jpg'
+if icon_input.exists():
+    shutil.copyfile(icon_input, icon)
+    make = 'ICON := icon.jpg\n' + make
+else:
+    icon.unlink(missing_ok=True)
+make += '\n$(OUTPUT).nro: $(APP_ICON)\n'
 make = make.replace('../shared', str(mono / 'native/shared'))
 make = make.replace('$(OUTPUT).elf\t:\t$(OFILES)', '$(OUTPUT).elf\t:\t$(OFILES) $(AOT_FILES)')
 make = make.replace('$(CURDIR)/$(dir)', '$(abspath $(dir))')
@@ -83,5 +91,5 @@ makefile = out / 'Makefile'
 makefile.write_text(makefile.read_text().replace('-DDLSHIM_DISABLE=1', '-DDLSHIM_DISABLE=1' + fm_flags).replace('Celeste 64 (silent Switch)', 'Celeste 64'))
 source_files = {str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(port.rglob('*')) if p.is_file() and '__pycache__' not in p.parts}
 (out / 'source-files.json').write_text(json.dumps(source_files, indent=2) + '\n')
-(out / 'build-options.json').write_text(json.dumps({'port_source_commit': subprocess.check_output(['git', '-C', str(root), 'rev-parse', 'HEAD'], text=True).strip(), 'port_source_files_sha256': hashlib.sha256((out / 'source-files.json').read_bytes()).hexdigest(), 'animation_runtime_commit': '5a33d5452528d827ac55727f302d8a91a75c4186' if 'animation' in optimizations else None, 'build_name': build_name, 'audio_backend': 'FMOD Android ARM64 2.02.18 via libnx', 'audio_inputs_sha256': hashlib.sha256((out / 'audio-inputs.json').read_bytes()).hexdigest(), 'aot_optimize': os.environ.get('CELESTE64_AOT_OPTIMIZE') or 'compiler defaults', 'managed_configuration': 'Release', 'native_optimization': '-O2', 'mono_sdk_configuration': 'Debug', 'runtime_mode': 'MONO_AOT_MODE_FULL', 'aot_trampolines': {'specific': 65536, 'static_rgctx': 32768, 'imt': 4096, 'gsharedvt_arg': 8192}, 'source_optimizations': optimizations}, indent=2) + '\n')
+(out / 'build-options.json').write_text(json.dumps({'port_source_commit': subprocess.check_output(['git', '-C', str(root), 'rev-parse', 'HEAD'], text=True).strip(), 'port_source_files_sha256': hashlib.sha256((out / 'source-files.json').read_bytes()).hexdigest(), 'nro_icon_sha256': hashlib.sha256(icon.read_bytes()).hexdigest() if icon.exists() else None, 'animation_runtime_commit': '5a33d5452528d827ac55727f302d8a91a75c4186' if 'animation' in optimizations else None, 'build_name': build_name, 'audio_backend': 'FMOD Android ARM64 2.02.18 via libnx', 'audio_inputs_sha256': hashlib.sha256((out / 'audio-inputs.json').read_bytes()).hexdigest(), 'aot_optimize': os.environ.get('CELESTE64_AOT_OPTIMIZE') or 'compiler defaults', 'managed_configuration': 'Release', 'native_optimization': '-O2', 'mono_sdk_configuration': 'Debug', 'runtime_mode': 'MONO_AOT_MODE_FULL', 'aot_trampolines': {'specific': 65536, 'static_rgctx': 32768, 'imt': 4096, 'gsharedvt_arg': 8192}, 'source_optimizations': optimizations}, indent=2) + '\n')
 print(out)
