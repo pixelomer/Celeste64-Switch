@@ -1,6 +1,6 @@
 """Link the isolated Switch Mesa worker."""
 from pathlib import Path
-import hashlib
+import hashlib, os
 
 def prepare_renderer(out, root, mode):
     assert mode in ('off', 'on')
