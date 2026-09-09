@@ -161,6 +161,8 @@ stage_options |= animation_options
 stage_options.add('boxinflate')
 stage_options.add('inflatedcull')
 stage_options.add('stagecopybatch')
+stage_options.add('scalarbounds')
+stage_options.add('inversecache')
 allowed = {'spatial', 'late', 'frustum', 'collision', 'gridwalk', 'snow', 'snowphase', 'material', 'materialrefs', 'uniforms', 'glcache', 'textures', 'imagebytes', 'animation', 'sprites', 'spritefill', 'spritefields', 'snowsprite', 'snowfill', 'modelsort', 'shadowcache', 'hair', 'hairmesh', 'nativecull', 'modelbits', 'collisionmath', 'submitbatch'} | render_math_options | stage_options
 assert not set(optimizations) - allowed, set(optimizations) - allowed
 if optimizations:
@@ -183,6 +185,10 @@ if optimizations:
     if 'uniformrefs' in optimizations:
         from uniform_refs import optimize_uniform_refs
         optimize_uniform_refs(out, replace, override)
+    if 'inversecache' in optimizations:
+        assert {'renderprep', 'nativemath'} <= set(optimizations)
+        from inverse_cache import optimize_inverse_cache
+        optimize_inverse_cache(out, replace, override)
     if 'skinbindings' in optimizations:
         assert 'animation' in optimizations
         from optimizations.skinbindings import optimize_skinbindings
@@ -218,6 +224,10 @@ if optimizations:
         assert {'stagebindings', 'nativeuniformcopy', 'stagefast'} <= set(optimizations)
         from stage_copy_batch import optimize_stage_copy_batch
         optimize_stage_copy_batch(out, here, replace)
+    if 'scalarbounds' in optimizations:
+        assert 'boxinflate' not in optimizations
+        from scalar_bounds import optimize_scalar_bounds
+        optimize_scalar_bounds(out, replace, override)
     if 'boxinflate' in optimizations:
         from box_inflate import optimize_box_inflate
         optimize_box_inflate(out, here, replace, override)
