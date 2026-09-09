@@ -6,6 +6,7 @@ mono="$root/third_party/upstream/mono-nx"
 export MONO_NX_ROOT="$mono/dotnet_runtime"
 export ICU_NX_INSTALL_DIR="$mono/icu/libnx"
 export PATH="$PATH:$DEVKITPRO/devkitA64/bin"
+bash "$here/bootstrap-shaders.sh"
 python3 "$here/prepare.py"
 cd "$root/artifacts/celeste64-switch-v120-bootstrap"
 dotnet build managed/Game/Celeste64.Switch.csproj -c Release > logs/managed-build.log 2>&1

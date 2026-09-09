@@ -10,6 +10,14 @@ public sealed class GraphicsDevice
     public void Draw(DrawCommand command)
     {
         if(!command.DepthTestEnabled) command.DepthCompare=DepthCompare.None;
+        // Current Foster uses clockwise front faces; the legacy GL backend
+        // uses OpenGL's counter-clockwise default. Preserve the game's faces.
+        command.CullMode = command.CullMode switch
+        {
+            CullMode.Front => CullMode.Back,
+            CullMode.Back => CullMode.Front,
+            _ => command.CullMode
+        };
         command.Submit();
     }
 }

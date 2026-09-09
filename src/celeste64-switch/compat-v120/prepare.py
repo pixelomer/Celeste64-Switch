@@ -4,7 +4,7 @@ The old preparation pipeline supplies the proven native/audio bootstrap. Game
 sources below come from 6edfe1e; no gameplay source is replaced with v1.1.1.
 """
 from pathlib import Path
-import json, os, re, shutil, subprocess
+import hashlib, json, os, re, shutil, subprocess, sys
 root = Path(__file__).resolve().parents[3]
 here = Path(__file__).resolve().parent
 name = 'celeste64-switch-v120-bootstrap'
@@ -13,7 +13,9 @@ latest = root / 'third_party/upstream/celeste64-v1.2-research'
 modern = root / 'third_party/upstream/foster'
 assert subprocess.check_output(['git', '-C', str(latest), 'rev-parse', 'HEAD'], text=True).strip() == '6edfe1ebd2a21a6134d7675a28e357891025407e'
 assert subprocess.check_output(['git', '-C', str(modern), 'rev-parse', 'HEAD'], text=True).strip() == 'a5b574f36e5d8928a4d47566c7b924140b653c85'
-env = dict(os.environ, CELESTE64_BUILD_NAME=name, CELESTE64_OPTIMIZATIONS='', CELESTE64_AUDIO_PREFERRED_CORE='2')
+env = {k: v for k, v in os.environ.items() if not k.startswith('CELESTE64_')}
+env.update(CELESTE64_BUILD_NAME=name, CELESTE64_OPTIMIZATIONS='', CELESTE64_AUDIO_PREFERRED_CORE='2', CELESTE64_AOT_OPTIMIZE='aggressive-inlining')
+env['CELESTE64_MESA_WORKER'] = os.environ.get('CELESTE64_V120_MESA_WORKER', '0')
 subprocess.run(['python3', str(here.parent / 'prepare.py')], env=env, check=True)
 
 def replace(text, old, new, count=1):
@@ -36,8 +38,8 @@ for file in (latest / 'Source').rglob('*.cs'):
         text = replace(text, 'public Game(AppConfig config) : base(config)', 'public Game()')
         text = text.replace('protected override void', 'public override void')
         text = replace(text, 'private readonly Stack<Scene> scenes', 'public readonly GraphicsDevice GraphicsDevice = new();\n    public readonly Window Window = new();\n    private readonly Foster.V120.LegacyInputProvider inputProvider = new();\n    public Input Input => inputProvider.Input;\n    public string UserPath => App.UserPath;\n    public void Exit() => App.Exit();\n    public Time Time { get; private set; }\n    private readonly Stack<Scene> scenes')
-        text = replace(text, '\t\tAudio.Update();', '        Time = new(Foster.Framework.Time.Duration, Time.Elapsed, Time.Frame + 1, Time.RenderFrame);\n        inputProvider.Update(Time);\n        Audio.Update();')
-        text = replace(text, 'public override void Render()\n\t{', 'public override void Render()\n\t{\n        Time = Time.AdvanceRenderFrame();')
+        text = replace(text, '\t\tAudio.Update();', '        Time = Foster.V120.LegacyClock.Current;\n        inputProvider.Update(Time);\n        Audio.Update();')
+        text = replace(text, 'public override void Render()\n\t{', 'public override void Render()\n\t{\n        Foster.V120.LegacyClock.AdvanceRenderFrame();\n        Time = Foster.V120.LegacyClock.Current;')
         text = text.replace('FMOD.Studio.EVENT_CALLBACK audioEventCallback', 'Action audioEventCallback')
         text = replace(text, 'private FMOD.RESULT MusicTimelineCallback(FMOD.Studio.EVENT_CALLBACK_TYPE type, IntPtr _event, IntPtr parameters)', 'private void MusicTimelineCallback()')
         text = replace(text, '\n\t\treturn FMOD.RESULT.OK;', '')
@@ -98,7 +100,10 @@ foster_patch('Graphics/DrawCommand.cs', [('public struct DrawCommand()', 'public
 foster_patch('Graphics/Enums/TextureFormat.cs', [('Color = R8G8B8A8', 'Color = R8G8B8A8,\n    Depth16 = 3'), ('TextureFormat.Depth24Stencil8 => 4,', 'TextureFormat.Depth24Stencil8 => 4,\n            TextureFormat.Depth16 => 2,')])
 (fd / 'Foster.Framework.csproj').write_text(project)
 app = fd / 'App.cs'
-app.write_text(app.read_text().replace('sdmc:/switch/celeste64', 'sdmc:/switch/celeste64-v120'))
+text = app.read_text().replace('sdmc:/switch/celeste64', 'sdmc:/switch/celeste64-v120')
+text = replace(text, 'Time.Advance(delta);', 'Time.Advance(delta);\n            Foster.V120.LegacyClock.Advance(delta);')
+text = replace(text, 'Time.Advance(accumulator - Time.FixedStepMaxElapsedTime);', 'Time.Advance(accumulator - Time.FixedStepMaxElapsedTime);\n                Foster.V120.LegacyClock.Advance(accumulator - Time.FixedStepMaxElapsedTime);')
+app.write_text(text)
 main = out / 'source/main.c'
 main.write_text(main.read_text().replace('sdmc:/switch/celeste64', 'sdmc:/switch/celeste64-v120'))
 shutil.copytree(latest / 'Content', out / 'romfs/Content', dirs_exist_ok=True)
@@ -133,3 +138,13 @@ make = out / 'Makefile'
 make.write_text(make.read_text().replace('APP_VERSION := 1.1.1-a1', 'APP_VERSION := 1.2.0-dev').replace('Celeste 64 (silent Switch)', 'Celeste 64 v1.2.0 development'))
 (out / 'v120-inputs.json').write_text(json.dumps({'game': '6edfe1ebd2a21a6134d7675a28e357891025407e', 'foster_input': 'a5b574f36e5d8928a4d47566c7b924140b653c85', 'backend': '351d20640cb6d6323a1490fa5f5254b8269f783c', 'state': 'integration candidate; no performance claim'}, indent=2) + '\n')
 print(out)
+optimizations = [v for v in os.environ.get('CELESTE64_V120_OPTIMIZATIONS', '').split(',') if v]
+allowed = {'spatial', 'late', 'frustum', 'collision', 'gridwalk', 'snow', 'snowphase', 'material', 'uniforms', 'glcache', 'textures', 'imagebytes'}
+assert not set(optimizations) - allowed, set(optimizations) - allowed
+if optimizations:
+    sys.path.insert(0, str(here.parent))
+    from optimizations.prepare import optimize
+    optimize(out, here.parent, latest, root / 'third_party/upstream/foster-0.1.18', optimizations)
+options = json.loads((out / 'build-options.json').read_text())
+options.update(game_commit='6edfe1ebd2a21a6134d7675a28e357891025407e', game_version='1.2.0', foster_input_commit='a5b574f36e5d8928a4d47566c7b924140b653c85', spirv_cross_commit='be71ee8c12cd7dc5ca8fa9581f708c2e8561fe2a', source_optimizations=optimizations, save_directory='sdmc:/switch/celeste64-v120', sharpgltf_version='1.0.5', sledge_version='1.2.8')
+(out / 'build-options.json').write_text(json.dumps(options, indent=2) + '\n')

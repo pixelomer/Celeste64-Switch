@@ -66,7 +66,7 @@ def optimize(out, port, game, foster, names):
         project = out / 'managed/Game/Celeste64.Switch.csproj'
         xml = project.read_text()
         exclusion = str(game / 'Source' / relative) + ';'
-        if exclusion not in xml:
+        if exclusion not in xml and ' Exclude="' in xml:
             xml = replace(xml, ' Exclude="', ' Exclude="' + exclusion)
         project.write_text(xml)
     if 'imagebytes' in names:
