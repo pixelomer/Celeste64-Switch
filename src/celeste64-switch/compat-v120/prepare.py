@@ -165,6 +165,9 @@ stage_options.add('scalarbounds')
 stage_options.add('inversecache')
 stage_options.add('renderinterfaces')
 stage_options.add('leafinterop')
+stage_options.add('spikemesh')
+stage_options.add('streambuffers')
+stage_options.add('posereuse')
 allowed = {'spatial', 'late', 'frustum', 'collision', 'gridwalk', 'snow', 'snowphase', 'material', 'materialrefs', 'uniforms', 'glcache', 'textures', 'imagebytes', 'animation', 'sprites', 'spritefill', 'spritefields', 'snowsprite', 'snowfill', 'modelsort', 'shadowcache', 'hair', 'hairmesh', 'nativecull', 'modelbits', 'collisionmath', 'submitbatch'} | render_math_options | stage_options
 assert not set(optimizations) - allowed, set(optimizations) - allowed
 if optimizations:
@@ -240,6 +243,16 @@ if optimizations:
         assert 'nativecull' in optimizations
         from box_inflate import optimize_inflated_cull
         optimize_inflated_cull(out, here, replace, override)
+    if 'streambuffers' in optimizations:
+        from stream_buffers import optimize_stream_buffers
+        optimize_stream_buffers(out, replace)
+    if 'posereuse' in optimizations:
+        assert {'animation', 'drawableframe'} <= set(optimizations)
+        from pose_reuse import optimize_pose_reuse
+        optimize_pose_reuse(out, replace)
+    if 'spikemesh' in optimizations:
+        from spike_mesh_cache import optimize_spike_mesh
+        optimize_spike_mesh(out, here, replace)
     if 'leafinterop' in optimizations:
         assert {'stagecopybatch', 'nativeuniformcopy', 'nativemath'} <= set(optimizations)
         from leaf_interop import optimize_leaf_interop
