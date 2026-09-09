@@ -9,4 +9,10 @@ fi
 export CELESTE64_AOT_OPTIMIZE=${CELESTE64_AOT_OPTIMIZE-aggressive-inlining}
 export CELESTE64_BUILD_NAME=${CELESTE64_BUILD_NAME-celeste64-switch-fmod-release}
 port_dir=$(cd "$(dirname "$0")" && pwd)
+# Preserve explicit probe variants; ordinary builds use the validated CPU1 worker.
+export CELESTE64_MESA_WORKER=${CELESTE64_MESA_WORKER-1}
+export CELESTE64_MESA_LARGE_UPLOADS=${CELESTE64_MESA_LARGE_UPLOADS-1}
+if [[ $CELESTE64_MESA_WORKER == 1 ]]; then
+ python3 "$port_dir/renderer/build-mesa-thread.py" --ensure
+fi
 exec bash "$port_dir/build.sh"
