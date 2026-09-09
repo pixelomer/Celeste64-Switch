@@ -34,6 +34,9 @@ for file in (latest / 'Source').rglob('*.cs'):
     text = text.replace('Normalized:', 'normalized:')
     text = re.sub('\\.TexCoords\\[([0-3])\\]', '.TexCoords\\1', text)
     text = text.replace('Calc.BetweenInterval(', 'Foster.Framework.Time.BetweenInterval(')
+    if relative.name == 'Hair.cs':
+        text = text.replace('mesh.SetVertices(', 'mesh.SetVertices<Vertex>(')
+        text = text.replace('mesh.SetIndices(', 'mesh.SetIndices<int>(')
     if relative.name == 'SpriteRenderer.cs':
         text = text.replace('spriteMesh.SetVertices(', 'spriteMesh.SetVertices<SpriteVertex>(')
         text = text.replace('spriteMesh.SetIndices(', 'spriteMesh.SetIndices<int>(')
@@ -144,8 +147,8 @@ make.write_text(make.read_text().replace('APP_VERSION := 1.1.1-a1', 'APP_VERSION
 print(out)
 optimizations = [v for v in os.environ.get('CELESTE64_V120_OPTIMIZATIONS', '').split(',') if v]
 render_math_options = {'renderprep', 'rendermath', 'nativemath', 'mathunroll', 'matrixpair'}
-stage_options = {'stagebindings', 'nativeuniformcopy'}
-allowed = {'spatial', 'late', 'frustum', 'collision', 'gridwalk', 'snow', 'snowphase', 'material', 'materialrefs', 'uniforms', 'glcache', 'textures', 'imagebytes', 'animation', 'sprites', 'spritefill', 'spritefields', 'snowsprite', 'snowfill', 'modelsort'} | render_math_options | stage_options
+stage_options = {'stagebindings', 'nativeuniformcopy', 'drawableframe', 'nativehair'}
+allowed = {'spatial', 'late', 'frustum', 'collision', 'gridwalk', 'snow', 'snowphase', 'material', 'materialrefs', 'uniforms', 'glcache', 'textures', 'imagebytes', 'animation', 'sprites', 'spritefill', 'spritefields', 'snowsprite', 'snowfill', 'modelsort', 'shadowcache', 'hair', 'hairmesh', 'nativecull'} | render_math_options | stage_options
 assert not set(optimizations) - allowed, set(optimizations) - allowed
 if optimizations:
     sys.path.insert(0, str(here.parent))
@@ -154,16 +157,23 @@ if optimizations:
         from animation_v120 import optimize_animation
         optimize_animation(out, here.parent, replace)
     optimize(out, here.parent, latest, root / 'third_party/upstream/foster-0.1.18', [v for v in optimizations if v != 'animation' and v not in render_math_options and (v not in stage_options)])
-    if set(optimizations) & render_math_options:
 
-        def override(relative, changes):
-            path = gd / Path(relative).name
-            text = path.read_text()
-            for change in changes:
-                text = replace(text, *change)
-            path.write_text(text)
+    def override(relative, changes):
+        path = gd / Path(relative).name
+        text = path.read_text()
+        for change in changes:
+            text = replace(text, *change)
+        path.write_text(text)
+    if set(optimizations) & render_math_options:
         from render_math_v120 import optimize_render
         optimize_render(out, here.parent, replace, override, optimizations)
+    if 'nativehair' in optimizations:
+        assert {'hair', 'hairmesh', 'rendermath'} <= set(optimizations)
+        from optimizations.nativehair import optimize_nativehair
+        optimize_nativehair(out, here.parent, override)
+    if 'drawableframe' in optimizations:
+        from drawable_frame_v120 import optimize_drawableframe
+        optimize_drawableframe(out, here.parent, override)
     if 'stagebindings' in optimizations:
         from stage_bindings import optimize_stage_bindings
         optimize_stage_bindings(out, here, replace, 'nativeuniformcopy' in optimizations)
