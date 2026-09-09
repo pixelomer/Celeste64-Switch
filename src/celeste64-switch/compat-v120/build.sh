@@ -27,15 +27,24 @@ dotnet "$illink" -x "$cfg/ILLink.Descriptors.xml" -x "$cfg/ILLink.LinkAttributes
  --action copy Sledge.Formats --action copy Sledge.Formats.Map > logs/linker.log 2>&1
 compiler="$MONO_NX_ROOT/artifacts/bin/mono/linux.x64.Debug/cross/linux-x64/libnx-arm64/mono-aot-cross"
 : > logs/aot.log
+aot_options=full,static,direct-icalls,direct-pinvoke,ntrampolines=65536,nrgctx-trampolines=32768,nimt-trampolines=4096,ngsharedvt-trampolines=8192,tool-prefix=aarch64-none-elf-
+dedup_options=
+if [[ ${CELESTE64_V120_AOT_DEDUP:-0} == 1 ]]; then dedup_options=,dedup-skip; fi
 for dll in output/*.dll; do
  echo "AOT $dll"
  "$compiler" --optimize=aggressive-inlining --path=output/ \
- --aot=full,static,direct-icalls,direct-pinvoke,ntrampolines=65536,nrgctx-trampolines=32768,nimt-trampolines=4096,ngsharedvt-trampolines=8192,tool-prefix=aarch64-none-elf- \
+ --aot="$aot_options$dedup_options" \
  "$dll" >> logs/aot.log 2>&1
 done
+if [[ ${CELESTE64_V120_AOT_DEDUP:-0} == 1 ]]; then
+ # Full AOT requires the shared methods skipped above. Collect from every
+ # assembly, then emit one copy into the already registered/loaded game image.
+ "$compiler" --optimize=aggressive-inlining --path=output/ \
+  --aot="$aot_options,dedup-include=Celeste64.Switch.dll" output/*.dll >> logs/aot.log 2>&1
+fi
 cp output/*.dll romfs/
 cp "$ICU_NX_INSTALL_DIR/share/icu/77.1/icudt77l.dat" romfs/
-sed -n "s/Linking symbol: '\([^']*\)'\./STATIC_MONO_SYM(\1);/p" logs/aot.log > source/mono_symbols.h
+sed -n "s/Linking symbol: '\([^']*\)'\./STATIC_MONO_SYM(\1);/p" logs/aot.log | awk '!seen[$0]++' > source/mono_symbols.h
 make -j4 > logs/native-build.log 2>&1
 cp celeste64-switch.nro celeste64-v120-dev.nro
 python3 "$here/nro_metadata.py" celeste64-v120-dev.nro > nro-metadata.json
