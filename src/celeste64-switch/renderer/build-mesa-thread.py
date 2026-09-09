@@ -4,7 +4,7 @@
 The stock installation is never modified. Rebuild every member together to keep private structures consistent with the
 current compiler and newlib headers; do not mix objects from the installed archive.
 """
-import hashlib, json, shutil, subprocess, sys, tarfile, urllib.request
+import hashlib, json, shutil, subprocess, sys, tarfile, urllib.request, os
 from pathlib import Path
 root = Path(__file__).resolve().parents[3]
 out = root / 'artifacts/mesa-renderer-build'
@@ -23,11 +23,14 @@ with tarfile.open(out / 'mesa-20.1.0-rc3.tar.xz') as archive:
 for name in list(inputs)[1:]:
     subprocess.run(['patch', '-p1', '-i', str(out / name)], cwd=source, check=True)
 subprocess.run([sys.executable, str(Path(__file__).with_name('patch-mesa-thread.py')), str(source)], check=True)
+large = os.environ.get('CELESTE64_MESA_LARGE_UPLOADS') == '1'
+if large:
+    subprocess.run([sys.executable, str(Path(__file__).with_name('patch-mesa-large.py')), str(source)], check=True)
 build = out / 'thread-build'
 if not (build / 'build.ninja').exists():
     subprocess.run(['/opt/devkitpro/meson-cross.sh', 'switch', str(out / 'cross-thread.ini'), str(build), str(source), '-Db_ndebug=true'], check=True)
 subprocess.run(['ninja', '-C', str(build), '-j8', 'src/egl/libEGL.a'], check=True)
-lib = out / 'full-lib'
+lib = out / ('full-lib-large' if large else 'full-lib')
 lib.mkdir(exist_ok=True)
 shutil.copyfile(build / 'src/egl/libEGL.a', lib / 'libEGL.a')
 manifest = {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in [lib / 'libEGL.a', *[out / name for name in inputs], Path(__file__).with_name('patch-mesa-thread.py')]}

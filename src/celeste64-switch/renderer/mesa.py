@@ -4,7 +4,8 @@ import hashlib, os
 
 def prepare_renderer(out, root, mode):
     assert mode in ('off', 'on')
-    lib = root / 'artifacts/mesa-renderer-build/full-lib/libEGL.a'
+    large = os.environ.get('CELESTE64_MESA_LARGE_UPLOADS') == '1'
+    lib = root / 'artifacts/mesa-renderer-build' / ('full-lib-large' if large else 'full-lib') / 'libEGL.a'
     assert lib.is_file(), 'Build the isolated Mesa archive first'
     p = out / 'Makefile'
     s = p.read_text()
