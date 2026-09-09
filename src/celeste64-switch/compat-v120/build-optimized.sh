@@ -3,5 +3,5 @@
 set -euo pipefail
 here=$(cd "$(dirname "$0")" && pwd)
 export CELESTE64_V120_MESA_WORKER=1
-export CELESTE64_V120_OPTIMIZATIONS=spatial,late,frustum,collision,gridwalk,snow,snowphase,material,materialrefs,uniforms,glcache,textures,imagebytes,animation,sprites,spritefill,spritefields,snowsprite,snowfill,modelsort,renderprep,rendermath,nativemath,mathunroll,matrixpair,stagebindings,nativeuniformcopy,shadowcache,drawableframe,hair,hairmesh,nativehair,nativecull,modelbits,skinbindings,uniformrefs,animationmath,indexedcurves,morphneutral,nativeskin,affinemath,posematrix,srtmatrix
+export CELESTE64_V120_OPTIMIZATIONS=spatial,late,frustum,collision,gridwalk,snow,snowphase,material,materialrefs,uniforms,glcache,textures,imagebytes,animation,sprites,spritefill,spritefields,snowsprite,snowfill,modelsort,renderprep,rendermath,nativemath,mathunroll,matrixpair,stagebindings,nativeuniformcopy,shadowcache,drawableframe,hair,hairmesh,nativehair,nativecull,modelbits,skinbindings,uniformrefs,animationmath,indexedcurves,morphneutral,nativeskin,affinemath,posematrix,srtmatrix,stagefast,submitbatch,inflatedcull,stagecopybatch,leafinterop
 exec bash "$here/build.sh"
