@@ -14,6 +14,9 @@ def prepare_renderer(out, root, mode):
     s = p.read_text()
     anchor = 'fgl.context = SDL_GL_CreateContext(state->window);'
     assert s.count(anchor) == 1
+    debug = 'if (fgl.glDebugMessageCallback != NULL && state->logLevel != FOSTER_LOGGING_NONE)'
+    assert s.count(debug) == 1
+    s = s.replace(debug, 'if (0 && fgl.glDebugMessageCallback != NULL && state->logLevel != FOSTER_LOGGING_NONE)')
     p.write_text(s.replace(anchor, 'setenv("CELESTE64_MESA_THREAD", "' + ('true' if mode == 'on' else 'false') + '", 1);\n    ' + anchor))
     s = p.read_text()
     return hashlib.sha256(lib.read_bytes()).hexdigest()
