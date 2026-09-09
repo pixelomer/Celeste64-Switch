@@ -123,6 +123,10 @@ for name in ['Default', 'Edge', 'Sprite']:
         if stage == 'vertex':
             args += ['--fixup-clipspace']
         text = subprocess.check_output(args, text=True)
+        if name == 'Default' and stage == 'vertex':
+            pattern = 'mat4\\(type_JointUniforms\\[int\\(in_var_TEXCOORD4\\.[xyzw]\\)[^;]*?\\+ 3\\]\\)'
+            text, count = re.subn(pattern, lambda match: 'transpose(' + match[0] + ')', text)
+            assert count == 4, ('row-major joint array reads', count)
         text = text.replace('out_var_TEXCOORD', 'varying_TEXCOORD') if stage == 'vertex' else text.replace('in_var_TEXCOORD', 'varying_TEXCOORD')
         if stage == 'fragment':
             helpers = []
