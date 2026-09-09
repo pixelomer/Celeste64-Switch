@@ -146,12 +146,15 @@ text = replace(text, 'case FOSTER_TEXTURE_FORMAT_DEPTH24_STENCIL8:', 'case FOSTE
 text = replace(text, 'if (attachments[i] == FOSTER_TEXTURE_FORMAT_DEPTH24_STENCIL8)', 'if (attachments[i] == FOSTER_TEXTURE_FORMAT_DEPTH16)\n        {\n            tex->glAttachment = GL_DEPTH_ATTACHMENT;\n        }\n        else if (attachments[i] == FOSTER_TEXTURE_FORMAT_DEPTH24_STENCIL8)')
 gl.write_text(text)
 make = out / 'Makefile'
-make.write_text(make.read_text().replace('APP_VERSION := 1.1.1-a1', 'APP_VERSION := 1.2.0-dev').replace('Celeste 64 (silent Switch)', 'Celeste 64 v1.2.0 development'))
+app_title = 'Celeste 64 v1.2.0'
+make.write_text(make.read_text().replace('APP_VERSION := 1.1.1-a1', 'APP_VERSION := 1.2.0-6edfe1e').replace('Celeste 64 (silent Switch)', app_title))
 (out / 'v120-inputs.json').write_text(json.dumps({'game': '6edfe1ebd2a21a6134d7675a28e357891025407e', 'foster_input': 'a5b574f36e5d8928a4d47566c7b924140b653c85', 'backend': '351d20640cb6d6323a1490fa5f5254b8269f783c', 'state': 'integration candidate; no performance claim'}, indent=2) + '\n')
 print(out)
 optimizations = [v for v in os.environ.get('CELESTE64_V120_OPTIMIZATIONS', '').split(',') if v]
 render_math_options = {'renderprep', 'rendermath', 'nativemath', 'mathunroll', 'matrixpair'}
-stage_options = {'stagebindings', 'nativeuniformcopy', 'drawableframe', 'nativehair', 'skinbindings', 'uniformrefs'}
+stage_options = {'stagebindings', 'nativeuniformcopy', 'drawableframe', 'nativehair', 'skinbindings', 'uniformrefs', 'stagefast'}
+animation_options = {'animationmath', 'indexedcurves', 'morphneutral', 'nativeskin', 'affinemath', 'posematrix', 'srtmatrix'}
+stage_options |= animation_options
 allowed = {'spatial', 'late', 'frustum', 'collision', 'gridwalk', 'snow', 'snowphase', 'material', 'materialrefs', 'uniforms', 'glcache', 'textures', 'imagebytes', 'animation', 'sprites', 'spritefill', 'spritefields', 'snowsprite', 'snowfill', 'modelsort', 'shadowcache', 'hair', 'hairmesh', 'nativecull', 'modelbits'} | render_math_options | stage_options
 assert not set(optimizations) - allowed, set(optimizations) - allowed
 if optimizations:
@@ -178,6 +181,17 @@ if optimizations:
         assert 'animation' in optimizations
         from optimizations.skinbindings import optimize_skinbindings
         optimize_skinbindings(out, replace)
+    for option in ['animationmath', 'indexedcurves', 'morphneutral', 'nativeskin', 'affinemath', 'posematrix', 'srtmatrix']:
+        if option not in optimizations:
+            continue
+        dependencies = {'animationmath': {'animation', 'nativemath'}, 'indexedcurves': {'animation'}, 'morphneutral': {'animation'}, 'nativeskin': {'skinbindings', 'animationmath'}, 'affinemath': {'animationmath'}, 'posematrix': {'affinemath'}, 'srtmatrix': {'affinemath'}}
+        assert dependencies[option] <= set(optimizations), (option, dependencies[option])
+        import importlib
+        apply = getattr(importlib.import_module('optimizations.' + option), 'optimize_' + option)
+        if option in {'nativeskin', 'affinemath', 'posematrix'}:
+            apply(out, replace)
+        else:
+            apply(out, here.parent, replace)
     if 'nativehair' in optimizations:
         assert {'hair', 'hairmesh', 'rendermath'} <= set(optimizations)
         from optimizations.nativehair import optimize_nativehair
@@ -190,6 +204,10 @@ if optimizations:
         optimize_stage_bindings(out, here, replace, 'nativeuniformcopy' in optimizations)
     elif 'nativeuniformcopy' in optimizations:
         raise ValueError('nativeuniformcopy requires stagebindings in the current shader adapter')
+    if 'stagefast' in optimizations:
+        assert {'stagebindings', 'nativeuniformcopy'} <= set(optimizations)
+        from stage_fast import optimize_stage_fast
+        optimize_stage_fast(out, replace)
 options = json.loads((out / 'build-options.json').read_text())
 options.update(game_commit='6edfe1ebd2a21a6134d7675a28e357891025407e', game_version='1.2.0', foster_input_commit='a5b574f36e5d8928a4d47566c7b924140b653c85', spirv_cross_commit='be71ee8c12cd7dc5ca8fa9581f708c2e8561fe2a', spirv_cross_binary_sha256=hashlib.sha256(cross.read_bytes()).hexdigest(), source_optimizations=optimizations, save_directory='sdmc:/switch/celeste64-v120', sharpgltf_version='1.0.5', sledge_version='1.2.8', animation_runtime_commit='4b28af2b6e5e30c6bade3f8baaf6b5e1a67ceb98' if 'animation' in optimizations else None)
 (out / 'build-options.json').write_text(json.dumps(options, indent=2) + '\n')

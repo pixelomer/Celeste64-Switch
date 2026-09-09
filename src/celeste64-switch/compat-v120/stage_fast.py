@@ -1,0 +1,11 @@
+"""Avoid span construction and native calls for single-value stage uniforms."""
+
+def optimize_stage_fast(out, replace):
+    path = out / 'managed/Foster/StageBindings.cs'
+    text = path.read_text()
+    text = replace(text, '    private void UploadStage(', '    private unsafe void SetStageBuffer(ref StageBinding cache,string name,byte[] data)\n    {\n        ref readonly var it=ref ResolveStageBinding(ref cache,name);\n        if(!cache.Present) return;\n        if(!IsFloat(it.Type)) throw new Exception($"Uniform \'{name}\' is not a Float value type");\n        int count=Math.Min(data.Length/4,it.BufferLength);\n        // Keep managed bounds checks before entering the native copy.\n        if(it.BufferStart<0 || count<0 || it.BufferStart>floatBuffer.Length-count)\n        {\n            SetStageFloats(ref cache,name,MemoryMarshal.Cast<byte,float>(data));\n            return;\n        }\n        fixed(byte* source=data)\n        fixed(float* destination=floatBuffer)\n            FosterMaterialCopyFloats(destination+it.BufferStart,(float*)source,count);\n    }\n    private void SetStageScalar(ref StageBinding cache,string name,float value)\n    {\n        ref readonly var it=ref ResolveStageBinding(ref cache,name);\n        if(!cache.Present) return;\n        if(!IsFloat(it.Type)) throw new Exception($"Uniform \'{name}\' is not a Float value type");\n        int count=Math.Min(1,it.BufferLength);\n        if(it.BufferStart<0 || count<0 || it.BufferStart>floatBuffer.Length-count)\n        {\n            Span<float> fallback=stackalloc float[1];fallback[0]=value;\n            SetStageFloats(ref cache,name,fallback);\n            return;\n        }\n        if(count!=0) floatBuffer[it.BufferStart]=value;\n    }\n    private void UploadStage(')
+    text = replace(text, 'SetStageFloats(ref bindings.Floats[i],name,MemoryMarshal.Cast<byte,float>(buffers[i]));', 'SetStageBuffer(ref bindings.Floats[i],name,buffers[i]);')
+    text = replace(text, '        Span<float> flip=stackalloc float[1];', '')
+    text = replace(text, 'flip[0]=flipTargets', 'float flip=flipTargets')
+    text = replace(text, 'SetStageFloats(ref bindings.Flips[i],stageFlipNames[i],flip);', 'SetStageScalar(ref bindings.Flips[i],stageFlipNames[i],flip);')
+    path.write_text(text)
