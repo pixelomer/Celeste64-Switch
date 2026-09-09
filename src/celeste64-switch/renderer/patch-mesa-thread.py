@@ -19,3 +19,4 @@ edit(f, '    EGLBoolean ret = disp->stapi->make_current', '    /* Finish old wor
 edit(f, '    if (surface->cur_slot < 0) {', '    /* Drain BEFORE reading cur_slot: the worker can dequeue the first buffer. */\n    context->stctx->thread_finish(context->stctx);\n    if (surface->cur_slot < 0) {')
 p = root / 'src/mesa/state_tracker/st_manager.c'
 edit('include/c11/threads.h', '#ifndef HAVE_TIMESPEC_GET', '#if !defined(HAVE_TIMESPEC_GET) && !defined(__SWITCH__)')
+edit('src/util/u_thread.h', '   if (ret)\n      return 0;', '   if (ret != thrd_success)\n      return 0;')
