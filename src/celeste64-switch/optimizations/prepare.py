@@ -1,7 +1,7 @@
 """Semantics-preserving source adaptations for the Switch AOT backend."""
 
 def optimize(out, port, game, foster, names):
-    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep', 'glcache', 'hair', 'textures', 'materialrefs', 'modelsort', 'hairmesh', 'rendermath', 'nativemath', 'imagebytes', 'nativehair', 'snowphase', 'gridwalk', 'imagelifetime', 'matrixbindings', 'skinbindings', 'animationmath', 'morphneutral', 'collisionmath', 'affinemath', 'triangleedges', 'spritefill', 'mathunroll', 'matrixpair', 'matrixcache', 'snowsprite', 'snowfill', 'shadowcache', 'skinspan', 'modelbits', 'spritefields', 'scalarbindings', 'drawableframe', 'proptransform', 'nativecull', 'indexedcurves', 'nativeskin', 'skinmemcpy', 'textoutline', 'posematrix', 'srtmatrix', 'nativeuniformcopy', 'jointbindings'}
+    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep', 'glcache', 'hair', 'textures', 'materialrefs', 'modelsort', 'hairmesh', 'rendermath', 'nativemath', 'imagebytes', 'nativehair', 'snowphase', 'gridwalk', 'imagelifetime', 'matrixbindings', 'skinbindings', 'animationmath', 'morphneutral', 'collisionmath', 'affinemath', 'triangleedges', 'spritefill', 'mathunroll', 'matrixpair', 'matrixcache', 'snowsprite', 'snowfill', 'shadowcache', 'skinspan', 'modelbits', 'spritefields', 'scalarbindings', 'drawableframe', 'proptransform', 'nativecull', 'indexedcurves', 'nativeskin', 'skinmemcpy', 'textoutline', 'posematrix', 'srtmatrix', 'nativeuniformcopy', 'jointbindings', 'matrixpaircopy', 'matrixupload'}
     if unknown:
         raise ValueError(f'Unknown source optimizations: {unknown}')
     if 'late' in names and 'spatial' not in names:
@@ -22,6 +22,10 @@ def optimize(out, port, game, foster, names):
         raise ValueError('gridwalk requires collision')
     if 'matrixbindings' in names and 'materialrefs' not in names:
         raise ValueError('matrixbindings requires materialrefs')
+    if 'matrixupload' in names and 'matrixpaircopy' not in names:
+        raise ValueError('matrixupload requires matrixpaircopy')
+    if 'matrixpaircopy' in names and (not {'matrixbindings', 'matrixpair'} <= set(names)):
+        raise ValueError('matrixpaircopy requires matrixbindings and matrixpair')
     if 'jointbindings' in names and 'matrixbindings' not in names:
         raise ValueError('jointbindings requires matrixbindings')
     if 'nativeuniformcopy' in names and 'matrixbindings' not in names:
@@ -198,6 +202,9 @@ def optimize(out, port, game, foster, names):
     if 'nativeuniformcopy' in names:
         from optimizations.nativeuniformcopy import optimize_nativeuniformcopy
         optimize_nativeuniformcopy(out, port, replace)
+    if 'matrixpaircopy' in names:
+        from optimizations.matrixpaircopy import optimize_matrixpaircopy
+        optimize_matrixpaircopy(out, port, override, replace)
     if 'jointbindings' in names:
         from optimizations.jointbindings import optimize_jointbindings
         optimize_jointbindings(out, override, replace)
@@ -231,6 +238,9 @@ def optimize(out, port, game, foster, names):
             raise ValueError('matrixpair requires nativemath and renderprep')
         from optimizations.matrixpair import optimize_matrixpair
         optimize_matrixpair(out, port, override)
+    if 'matrixupload' in names:
+        from optimizations.matrixupload import optimize_matrixupload
+        optimize_matrixupload(out, port, override, replace)
     if 'matrixcache' in names:
         if 'nativemath' not in names:
             raise ValueError('matrixcache requires nativemath')
