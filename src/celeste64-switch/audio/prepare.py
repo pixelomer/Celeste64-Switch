@@ -1,8 +1,11 @@
 """Prepare native FMOD loader inputs from pinned, locally supplied SDKs."""
 from pathlib import Path
-import hashlib, json, subprocess, os
+import hashlib, json, subprocess, os, os
 
 def prepare_audio(root, out):
+    preferred_core = os.environ.get('CELESTE64_AUDIO_PREFERRED_CORE', '1')
+    if preferred_core not in ('1', '2'):
+        raise ValueError('Audio preferred core must be 1 or 2')
     port = root / 'src/celeste64-switch/audio'
     sdk = root / 'fmod/sdk'
     if not (sdk / 'inc/fmod.h').exists():
@@ -25,4 +28,4 @@ def prepare_audio(root, out):
     inputs = [sdk / 'android/libfmod.so', sdk / 'android/libfmodstudio.so', *sorted((sdk / 'inc').glob('*.h'))]
     (out / 'audio-inputs.json').write_text(json.dumps({str(p.relative_to(root)): hashlib.sha256(p.read_bytes()).hexdigest() for p in inputs}, indent=2) + '\n')
     java = Path(os.environ['JAVA_HOME'])
-    return f' -DC64_AUDIO_RELEASE -D_GNU_SOURCE -I{sdk}/inc -I{out}/foster -I{java}/include -I{java}/include/linux'
+    return f' -DC64_AUDIO_RELEASE -DC64_AUDIO_PREFERRED_CORE={preferred_core} -D_GNU_SOURCE -I{sdk}/inc -I{out}/foster -I{java}/include -I{java}/include/linux'

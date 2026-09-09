@@ -14,6 +14,18 @@
 #include <time.h>
 #include <unistd.h>
 void c64_audio_log(const char *, ...);
+#ifndef C64_AUDIO_PREFERRED_CORE
+#define C64_AUDIO_PREFERRED_CORE 1
+#endif
+static unsigned audio_observed_cores, audio_placement_failures, audio_worker_count;
+void C64AudioPlacementReport(FILE *output);
+void C64AudioPlacementReport(FILE *output) {
+  fprintf(output, "Audio placement: preferred %d startup_observed_mask %x workers %u failures %u\n",
+          C64_AUDIO_PREFERRED_CORE,
+          __atomic_load_n(&audio_observed_cores, __ATOMIC_RELAXED),
+          __atomic_load_n(&audio_worker_count, __ATOMIC_RELAXED),
+          __atomic_load_n(&audio_placement_failures, __ATOMIC_RELAXED));
+}
 int c64_loader_log(const char *fmt, ...) {
   char b[1024];
   va_list v;
@@ -139,11 +151,15 @@ static void *thread_start(void *p) {
           svcGetInfo(&allowed, InfoType_CoreMask, CUR_PROCESS_HANDLE, 0))) {
     u32 audio_cores = allowed & 6;
     if (audio_cores) {
-      int ideal = (audio_cores & 2) ? 1 : 2;
+      int ideal = (audio_cores & (1u << C64_AUDIO_PREFERRED_CORE))
+                      ? C64_AUDIO_PREFERRED_CORE : ((audio_cores & 2) ? 1 : 2);
       Result rc = svcSetThreadCoreMask(CUR_THREAD_HANDLE, ideal, audio_cores);
-      c64_audio_log("C64_AUDIO worker core mask=%x result=%x", audio_cores, rc);
+      if (R_FAILED(rc)) __atomic_fetch_add(&audio_placement_failures, 1, __ATOMIC_RELAXED);
+      c64_audio_log("C64_AUDIO worker core mask=%x ideal=%d result=%x", audio_cores, ideal, rc);
     }
   }
+  __atomic_fetch_or(&audio_observed_cores, 1u << svcGetCurrentProcessorNumber(), __ATOMIC_RELAXED);
+  __atomic_fetch_add(&audio_worker_count, 1, __ATOMIC_RELAXED);
   return start.fn(start.arg);
 }
 static int create(uint64_t *out, const Attr *a, void *(*fn)(void *),
