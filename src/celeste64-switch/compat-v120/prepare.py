@@ -16,6 +16,7 @@ assert subprocess.check_output(['git', '-C', str(modern), 'rev-parse', 'HEAD'], 
 env = {k: v for k, v in os.environ.items() if not k.startswith('CELESTE64_')}
 env.update(CELESTE64_BUILD_NAME=name, CELESTE64_OPTIMIZATIONS='', CELESTE64_AUDIO_PREFERRED_CORE='2', CELESTE64_AOT_OPTIMIZE='aggressive-inlining')
 env['CELESTE64_MESA_WORKER'] = os.environ.get('CELESTE64_V120_MESA_WORKER', '0')
+env['CELESTE64_MESA_LARGE_UPLOADS'] = env['CELESTE64_MESA_WORKER']
 subprocess.run(['python3', str(here.parent / 'prepare.py')], env=env, check=True)
 
 def replace(text, old, new, count=1):
@@ -33,6 +34,9 @@ for file in (latest / 'Source').rglob('*.cs'):
     text = text.replace('Normalized:', 'normalized:')
     text = re.sub('\\.TexCoords\\[([0-3])\\]', '.TexCoords\\1', text)
     text = text.replace('Calc.BetweenInterval(', 'Foster.Framework.Time.BetweenInterval(')
+    if relative.name == 'SpriteRenderer.cs':
+        text = text.replace('spriteMesh.SetVertices(', 'spriteMesh.SetVertices<SpriteVertex>(')
+        text = text.replace('spriteMesh.SetIndices(', 'spriteMesh.SetIndices<int>(')
     if relative.name == 'Game.cs':
         text = replace(text, 'public class Game : App', 'public class Game : Module')
         text = replace(text, 'public Game(AppConfig config) : base(config)', 'public Game()')
@@ -139,12 +143,32 @@ make.write_text(make.read_text().replace('APP_VERSION := 1.1.1-a1', 'APP_VERSION
 (out / 'v120-inputs.json').write_text(json.dumps({'game': '6edfe1ebd2a21a6134d7675a28e357891025407e', 'foster_input': 'a5b574f36e5d8928a4d47566c7b924140b653c85', 'backend': '351d20640cb6d6323a1490fa5f5254b8269f783c', 'state': 'integration candidate; no performance claim'}, indent=2) + '\n')
 print(out)
 optimizations = [v for v in os.environ.get('CELESTE64_V120_OPTIMIZATIONS', '').split(',') if v]
-allowed = {'spatial', 'late', 'frustum', 'collision', 'gridwalk', 'snow', 'snowphase', 'material', 'uniforms', 'glcache', 'textures', 'imagebytes'}
+render_math_options = {'renderprep', 'rendermath', 'nativemath', 'mathunroll', 'matrixpair'}
+stage_options = {'stagebindings', 'nativeuniformcopy'}
+allowed = {'spatial', 'late', 'frustum', 'collision', 'gridwalk', 'snow', 'snowphase', 'material', 'materialrefs', 'uniforms', 'glcache', 'textures', 'imagebytes', 'animation', 'sprites', 'spritefill', 'spritefields', 'snowsprite', 'snowfill', 'modelsort'} | render_math_options | stage_options
 assert not set(optimizations) - allowed, set(optimizations) - allowed
 if optimizations:
     sys.path.insert(0, str(here.parent))
     from optimizations.prepare import optimize
-    optimize(out, here.parent, latest, root / 'third_party/upstream/foster-0.1.18', optimizations)
+    if 'animation' in optimizations:
+        from animation_v120 import optimize_animation
+        optimize_animation(out, here.parent, replace)
+    optimize(out, here.parent, latest, root / 'third_party/upstream/foster-0.1.18', [v for v in optimizations if v != 'animation' and v not in render_math_options and (v not in stage_options)])
+    if set(optimizations) & render_math_options:
+
+        def override(relative, changes):
+            path = gd / Path(relative).name
+            text = path.read_text()
+            for change in changes:
+                text = replace(text, *change)
+            path.write_text(text)
+        from render_math_v120 import optimize_render
+        optimize_render(out, here.parent, replace, override, optimizations)
+    if 'stagebindings' in optimizations:
+        from stage_bindings import optimize_stage_bindings
+        optimize_stage_bindings(out, here, replace, 'nativeuniformcopy' in optimizations)
+    elif 'nativeuniformcopy' in optimizations:
+        raise ValueError('nativeuniformcopy requires stagebindings in the current shader adapter')
 options = json.loads((out / 'build-options.json').read_text())
-options.update(game_commit='6edfe1ebd2a21a6134d7675a28e357891025407e', game_version='1.2.0', foster_input_commit='a5b574f36e5d8928a4d47566c7b924140b653c85', spirv_cross_commit='be71ee8c12cd7dc5ca8fa9581f708c2e8561fe2a', source_optimizations=optimizations, save_directory='sdmc:/switch/celeste64-v120', sharpgltf_version='1.0.5', sledge_version='1.2.8')
+options.update(game_commit='6edfe1ebd2a21a6134d7675a28e357891025407e', game_version='1.2.0', foster_input_commit='a5b574f36e5d8928a4d47566c7b924140b653c85', spirv_cross_commit='be71ee8c12cd7dc5ca8fa9581f708c2e8561fe2a', spirv_cross_binary_sha256=hashlib.sha256(cross.read_bytes()).hexdigest(), source_optimizations=optimizations, save_directory='sdmc:/switch/celeste64-v120', sharpgltf_version='1.0.5', sledge_version='1.2.8', animation_runtime_commit='4b28af2b6e5e30c6bade3f8baaf6b5e1a67ceb98' if 'animation' in optimizations else None)
 (out / 'build-options.json').write_text(json.dumps(options, indent=2) + '\n')
