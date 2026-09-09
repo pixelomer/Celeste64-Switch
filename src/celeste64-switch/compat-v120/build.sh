@@ -38,12 +38,13 @@ cp "$ICU_NX_INSTALL_DIR/share/icu/77.1/icudt77l.dat" romfs/
 sed -n "s/Linking symbol: '\([^']*\)'\./STATIC_MONO_SYM(\1);/p" logs/aot.log > source/mono_symbols.h
 make -j4 > logs/native-build.log 2>&1
 cp celeste64-switch.nro celeste64-v120-dev.nro
+python3 "$here/nro_metadata.py" celeste64-v120-dev.nro > nro-metadata.json
 sha256sum celeste64-v120-dev.nro > SHA256SUMS
 artifact_hash=$(cut -d ' ' -f1 SHA256SUMS)
 archive="$root/artifacts/v120-builds/$artifact_hash"
 mkdir -p "$archive"
 cp celeste64-v120-dev.nro celeste64-switch.elf build/celeste64-switch.map \
- build-options.json source-files.json v120-inputs.json audio-inputs.json SHA256SUMS "$archive/"
+ build-options.json source-files.json v120-inputs.json audio-inputs.json nro-metadata.json SHA256SUMS "$archive/"
 cp -r logs "$archive/"
 tar --exclude=bin --exclude=obj -czf "$archive/generated-sources.tar.gz" managed foster source Makefile
 echo "Deployment artifact: $archive/celeste64-v120-dev.nro"
