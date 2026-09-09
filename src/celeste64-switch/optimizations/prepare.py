@@ -1,7 +1,7 @@
 """Semantics-preserving source adaptations for the Switch AOT backend."""
 
 def optimize(out, port, game, foster, names):
-    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep', 'glcache', 'hair', 'textures', 'materialrefs', 'modelsort', 'hairmesh', 'rendermath', 'nativemath', 'imagebytes', 'nativehair', 'snowphase', 'gridwalk', 'imagelifetime', 'matrixbindings', 'skinbindings', 'animationmath', 'morphneutral', 'collisionmath', 'affinemath', 'triangleedges', 'spritefill', 'mathunroll', 'matrixpair', 'matrixcache', 'snowsprite', 'snowfill', 'shadowcache', 'skinspan', 'modelbits', 'spritefields', 'scalarbindings', 'drawableframe', 'proptransform', 'nativecull', 'indexedcurves', 'nativeskin', 'skinmemcpy', 'textoutline', 'posematrix', 'srtmatrix', 'nativeuniformcopy', 'jointbindings', 'matrixpaircopy', 'matrixupload', 'submitbatch'}
+    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep', 'glcache', 'hair', 'textures', 'materialrefs', 'modelsort', 'hairmesh', 'rendermath', 'nativemath', 'imagebytes', 'nativehair', 'snowphase', 'gridwalk', 'imagelifetime', 'matrixbindings', 'skinbindings', 'animationmath', 'morphneutral', 'collisionmath', 'affinemath', 'triangleedges', 'spritefill', 'mathunroll', 'matrixpair', 'matrixcache', 'snowsprite', 'snowfill', 'shadowcache', 'skinspan', 'modelbits', 'spritefields', 'scalarbindings', 'drawableframe', 'proptransform', 'nativecull', 'indexedcurves', 'nativeskin', 'skinmemcpy', 'textoutline', 'posematrix', 'srtmatrix', 'nativeuniformcopy', 'jointbindings', 'matrixpaircopy', 'matrixupload', 'submitbatch', 'renderparams'}
     if unknown:
         raise ValueError(f'Unknown source optimizations: {unknown}')
     if 'late' in names and 'spatial' not in names:
@@ -274,3 +274,8 @@ def optimize(out, port, game, foster, names):
     if 'submitbatch' in names:
         from optimizations.submitbatch import optimize_submitbatch
         optimize_submitbatch(out, port, foster, replace)
+    if 'renderparams' in names:
+        if 'scalarbindings' not in names:
+            raise ValueError('renderparams requires scalarbindings')
+        from optimizations.renderparams import optimize_renderparams
+        optimize_renderparams(out, override)
