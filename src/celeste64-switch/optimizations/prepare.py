@@ -1,7 +1,7 @@
 """Semantics-preserving source adaptations for the Switch AOT backend."""
 
 def optimize(out, port, game, foster, names):
-    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep', 'glcache', 'hair', 'textures', 'materialrefs', 'modelsort', 'hairmesh', 'rendermath', 'nativemath', 'imagebytes', 'nativehair', 'snowphase', 'gridwalk', 'imagelifetime', 'matrixbindings', 'skinbindings', 'animationmath', 'morphneutral', 'collisionmath', 'affinemath', 'triangleedges', 'spritefill', 'mathunroll', 'matrixpair', 'matrixcache', 'snowsprite', 'snowfill', 'shadowcache', 'skinspan', 'modelbits', 'spritefields', 'scalarbindings', 'drawableframe', 'proptransform', 'nativecull', 'indexedcurves', 'nativeskin', 'skinmemcpy', 'textoutline', 'posematrix'}
+    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep', 'glcache', 'hair', 'textures', 'materialrefs', 'modelsort', 'hairmesh', 'rendermath', 'nativemath', 'imagebytes', 'nativehair', 'snowphase', 'gridwalk', 'imagelifetime', 'matrixbindings', 'skinbindings', 'animationmath', 'morphneutral', 'collisionmath', 'affinemath', 'triangleedges', 'spritefill', 'mathunroll', 'matrixpair', 'matrixcache', 'snowsprite', 'snowfill', 'shadowcache', 'skinspan', 'modelbits', 'spritefields', 'scalarbindings', 'drawableframe', 'proptransform', 'nativecull', 'indexedcurves', 'nativeskin', 'skinmemcpy', 'textoutline', 'posematrix', 'srtmatrix'}
     if unknown:
         raise ValueError(f'Unknown source optimizations: {unknown}')
     if 'late' in names and 'spatial' not in names:
@@ -22,6 +22,8 @@ def optimize(out, port, game, foster, names):
         raise ValueError('gridwalk requires collision')
     if 'matrixbindings' in names and 'materialrefs' not in names:
         raise ValueError('matrixbindings requires materialrefs')
+    if 'srtmatrix' in names and 'affinemath' not in names:
+        raise ValueError('srtmatrix requires affinemath')
     if 'posematrix' in names and 'affinemath' not in names:
         raise ValueError('posematrix requires affinemath')
     if 'nativeskin' in names and (not {'skinbindings', 'animationmath'} <= set(names)):
@@ -98,6 +100,9 @@ def optimize(out, port, game, foster, names):
     if 'affinemath' in names:
         from optimizations.affinemath import optimize_affinemath
         optimize_affinemath(out, replace)
+    if 'srtmatrix' in names:
+        from optimizations.srtmatrix import optimize_srtmatrix
+        optimize_srtmatrix(out, port, replace)
     if 'posematrix' in names:
         from optimizations.posematrix import optimize_posematrix
         optimize_posematrix(out, replace)
