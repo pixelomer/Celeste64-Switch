@@ -1,7 +1,7 @@
 """Semantics-preserving source adaptations for the Switch AOT backend."""
 
 def optimize(out, port, game, foster, names):
-    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep', 'glcache', 'hair', 'textures', 'materialrefs', 'modelsort', 'hairmesh', 'rendermath', 'nativemath', 'imagebytes', 'nativehair', 'snowphase', 'gridwalk', 'imagelifetime', 'matrixbindings', 'skinbindings', 'animationmath', 'morphneutral', 'collisionmath', 'affinemath', 'triangleedges', 'spritefill', 'mathunroll', 'matrixpair', 'matrixcache', 'snowsprite', 'snowfill', 'shadowcache', 'skinspan', 'modelbits', 'spritefields', 'scalarbindings', 'drawableframe', 'proptransform', 'nativecull'}
+    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep', 'glcache', 'hair', 'textures', 'materialrefs', 'modelsort', 'hairmesh', 'rendermath', 'nativemath', 'imagebytes', 'nativehair', 'snowphase', 'gridwalk', 'imagelifetime', 'matrixbindings', 'skinbindings', 'animationmath', 'morphneutral', 'collisionmath', 'affinemath', 'triangleedges', 'spritefill', 'mathunroll', 'matrixpair', 'matrixcache', 'snowsprite', 'snowfill', 'shadowcache', 'skinspan', 'modelbits', 'spritefields', 'scalarbindings', 'drawableframe', 'proptransform', 'nativecull', 'indexedcurves'}
     if unknown:
         raise ValueError(f'Unknown source optimizations: {unknown}')
     if 'late' in names and 'spatial' not in names:
@@ -22,6 +22,8 @@ def optimize(out, port, game, foster, names):
         raise ValueError('gridwalk requires collision')
     if 'matrixbindings' in names and 'materialrefs' not in names:
         raise ValueError('matrixbindings requires materialrefs')
+    if 'indexedcurves' in names and 'animation' not in names:
+        raise ValueError('indexedcurves requires animation')
     if 'skinbindings' in names and 'animation' not in names:
         raise ValueError('skinbindings requires animation')
     if 'animationmath' in names and (not {'animation', 'nativemath'} <= set(names)):
@@ -69,6 +71,9 @@ def optimize(out, port, game, foster, names):
     if 'animation' in names:
         from optimizations.animation import optimize_animation
         optimize_animation(out, port, replace)
+    if 'indexedcurves' in names:
+        from optimizations.indexedcurves import optimize_indexedcurves
+        optimize_indexedcurves(out, port, replace)
     if 'skinbindings' in names:
         from optimizations.skinbindings import optimize_skinbindings
         optimize_skinbindings(out, replace)
