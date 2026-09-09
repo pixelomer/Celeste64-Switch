@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Build three probe objects against checksum-pinned switch-mesa package sources.
+"""Build a complete isolated Mesa archive from checksum-pinned package sources.
 
-The stock installation is never modified. All remaining archive members come
-unchanged from the installed switch-mesa 20.1.0-5 archive, whose hash is recorded.
+The stock installation is never modified. Rebuild every member together to keep private structures consistent with the
+current compiler and newlib headers; do not mix objects from the installed archive.
 """
 import hashlib, json, shutil, subprocess, sys, tarfile, urllib.request
 from pathlib import Path
@@ -26,13 +26,9 @@ subprocess.run([sys.executable, str(Path(__file__).with_name('patch-mesa-thread.
 build = out / 'thread-build'
 if not (build / 'build.ninja').exists():
     subprocess.run(['/opt/devkitpro/meson-cross.sh', 'switch', str(out / 'cross-thread.ini'), str(build), str(source), '-Db_ndebug=true'], check=True)
-objects = ['src/mesa/libmesa_gallium.a.p/state_tracker_st_context.c.o', 'src/mesa/libmesa_gallium.a.p/state_tracker_st_manager.c.o', 'src/egl/libEGL.a.p/drivers_switch_egl_switch.c.o']
-subprocess.run(['ninja', '-C', str(build), '-j4', *objects], check=True)
-lib = out / 'lib'
+subprocess.run(['ninja', '-C', str(build), '-j8', 'src/egl/libEGL.a'], check=True)
+lib = out / 'full-lib'
 lib.mkdir(exist_ok=True)
-stock = Path('/opt/devkitpro/portlibs/switch/lib/libEGL.a')
-assert hashlib.sha256(stock.read_bytes()).hexdigest() == '4222bb9b61791d948864322c1da9f4f21c084a3726a8002b8abcc682b3ecd820', 'Unexpected stock Mesa archive'
-shutil.copyfile(stock, lib / 'libEGL.a')
-subprocess.run(['aarch64-none-elf-ar', 'r', str(lib / 'libEGL.a'), *[str(build / p) for p in objects]], check=True)
-manifest = {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in [stock, lib / 'libEGL.a', *[build / p for p in objects]]}
-(out / 'archive-manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
+shutil.copyfile(build / 'src/egl/libEGL.a', lib / 'libEGL.a')
+manifest = {str(p): hashlib.sha256(p.read_bytes()).hexdigest() for p in [lib / 'libEGL.a', *[out / name for name in inputs], Path(__file__).with_name('patch-mesa-thread.py')]}
+(out / 'full-archive-manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
