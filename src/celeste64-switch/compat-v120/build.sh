@@ -25,6 +25,11 @@ dotnet "$illink" -x "$cfg/ILLink.Descriptors.xml" -x "$cfg/ILLink.LinkAttributes
  -a managed/Game/bin/Release/net9.0/Celeste64.Switch.dll all \
  --action copy Foster.Framework --action copy SharpGLTF.Core --action copy "$runtime_assembly" \
  --action copy Sledge.Formats --action copy Sledge.Formats.Map > logs/linker.log 2>&1
+if [[ ${CELESTE64_V120_AOT_DEDUP:-0} == 1 ]]; then
+ dotnet build "$here/AotInstances/AotInstances.csproj" -c Release \
+  -p:BaseIntermediateOutputPath="$PWD/obj/aot-instances/" -o managed/AotInstances > logs/aot-instances-build.log 2>&1
+ cp managed/AotInstances/aot-instances.dll output/
+fi
 compiler="$MONO_NX_ROOT/artifacts/bin/mono/linux.x64.Debug/cross/linux-x64/libnx-arm64/mono-aot-cross"
 : > logs/aot.log
 aot_options=full,static,direct-icalls,direct-pinvoke,ntrampolines=65536,nrgctx-trampolines=32768,nimt-trampolines=4096,ngsharedvt-trampolines=8192,tool-prefix=aarch64-none-elf-
@@ -32,15 +37,17 @@ dedup_options=
 if [[ ${CELESTE64_V120_AOT_DEDUP:-0} == 1 ]]; then dedup_options=,dedup-skip; fi
 for dll in output/*.dll; do
  echo "AOT $dll"
+ assembly_dedup_options=$dedup_options
+ if [[ ,${CELESTE64_V120_AOT_DEDUP_KEEP:-}, == *,"${dll##*/}",* ]]; then assembly_dedup_options=; fi
  "$compiler" --optimize=aggressive-inlining --path=output/ \
- --aot="$aot_options$dedup_options" \
+ --aot="$aot_options$assembly_dedup_options" \
  "$dll" >> logs/aot.log 2>&1
 done
 if [[ ${CELESTE64_V120_AOT_DEDUP:-0} == 1 ]]; then
  # Full AOT requires the shared methods skipped above. Collect from every
- # assembly, then emit one copy into the already registered/loaded game image.
+ # assembly, then emit one copy into the dedicated eagerly loaded image.
  "$compiler" --optimize=aggressive-inlining --path=output/ \
-  --aot="$aot_options,dedup-include=Celeste64.Switch.dll" output/*.dll >> logs/aot.log 2>&1
+  --aot="$aot_options,dedup-include=aot-instances.dll" output/*.dll >> logs/aot.log 2>&1
 fi
 cp output/*.dll romfs/
 cp "$ICU_NX_INSTALL_DIR/share/icu/77.1/icudt77l.dat" romfs/
