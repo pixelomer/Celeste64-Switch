@@ -147,8 +147,8 @@ make.write_text(make.read_text().replace('APP_VERSION := 1.1.1-a1', 'APP_VERSION
 print(out)
 optimizations = [v for v in os.environ.get('CELESTE64_V120_OPTIMIZATIONS', '').split(',') if v]
 render_math_options = {'renderprep', 'rendermath', 'nativemath', 'mathunroll', 'matrixpair'}
-stage_options = {'stagebindings', 'nativeuniformcopy', 'drawableframe', 'nativehair'}
-allowed = {'spatial', 'late', 'frustum', 'collision', 'gridwalk', 'snow', 'snowphase', 'material', 'materialrefs', 'uniforms', 'glcache', 'textures', 'imagebytes', 'animation', 'sprites', 'spritefill', 'spritefields', 'snowsprite', 'snowfill', 'modelsort', 'shadowcache', 'hair', 'hairmesh', 'nativecull'} | render_math_options | stage_options
+stage_options = {'stagebindings', 'nativeuniformcopy', 'drawableframe', 'nativehair', 'skinbindings', 'uniformrefs'}
+allowed = {'spatial', 'late', 'frustum', 'collision', 'gridwalk', 'snow', 'snowphase', 'material', 'materialrefs', 'uniforms', 'glcache', 'textures', 'imagebytes', 'animation', 'sprites', 'spritefill', 'spritefields', 'snowsprite', 'snowfill', 'modelsort', 'shadowcache', 'hair', 'hairmesh', 'nativecull', 'modelbits'} | render_math_options | stage_options
 assert not set(optimizations) - allowed, set(optimizations) - allowed
 if optimizations:
     sys.path.insert(0, str(here.parent))
@@ -167,6 +167,13 @@ if optimizations:
     if set(optimizations) & render_math_options:
         from render_math_v120 import optimize_render
         optimize_render(out, here.parent, replace, override, optimizations)
+    if 'uniformrefs' in optimizations:
+        from uniform_refs import optimize_uniform_refs
+        optimize_uniform_refs(out, replace, override)
+    if 'skinbindings' in optimizations:
+        assert 'animation' in optimizations
+        from optimizations.skinbindings import optimize_skinbindings
+        optimize_skinbindings(out, replace)
     if 'nativehair' in optimizations:
         assert {'hair', 'hairmesh', 'rendermath'} <= set(optimizations)
         from optimizations.nativehair import optimize_nativehair
