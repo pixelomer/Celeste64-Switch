@@ -1,7 +1,7 @@
 """Semantics-preserving source adaptations for the Switch AOT backend."""
 
 def optimize(out, port, game, foster, names):
-    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep', 'glcache', 'hair', 'textures', 'materialrefs', 'modelsort', 'hairmesh', 'rendermath', 'nativemath', 'imagebytes', 'nativehair', 'snowphase', 'gridwalk', 'imagelifetime', 'matrixbindings', 'skinbindings', 'animationmath', 'morphneutral', 'collisionmath', 'affinemath', 'triangleedges', 'spritefill', 'mathunroll', 'matrixpair', 'matrixcache', 'snowsprite', 'snowfill', 'shadowcache', 'skinspan', 'modelbits', 'spritefields', 'scalarbindings', 'drawableframe', 'proptransform', 'nativecull', 'indexedcurves', 'nativeskin', 'skinmemcpy', 'textoutline', 'posematrix', 'srtmatrix', 'nativeuniformcopy', 'jointbindings', 'matrixpaircopy', 'matrixupload'}
+    unknown = set(names) - {'spatial', 'late', 'frustum', 'material', 'collision', 'sprites', 'animation', 'uniforms', 'snow', 'renderprep', 'glcache', 'hair', 'textures', 'materialrefs', 'modelsort', 'hairmesh', 'rendermath', 'nativemath', 'imagebytes', 'nativehair', 'snowphase', 'gridwalk', 'imagelifetime', 'matrixbindings', 'skinbindings', 'animationmath', 'morphneutral', 'collisionmath', 'affinemath', 'triangleedges', 'spritefill', 'mathunroll', 'matrixpair', 'matrixcache', 'snowsprite', 'snowfill', 'shadowcache', 'skinspan', 'modelbits', 'spritefields', 'scalarbindings', 'drawableframe', 'proptransform', 'nativecull', 'indexedcurves', 'nativeskin', 'skinmemcpy', 'textoutline', 'posematrix', 'srtmatrix', 'nativeuniformcopy', 'jointbindings', 'matrixpaircopy', 'matrixupload', 'submitbatch'}
     if unknown:
         raise ValueError(f'Unknown source optimizations: {unknown}')
     if 'late' in names and 'spatial' not in names:
@@ -22,6 +22,8 @@ def optimize(out, port, game, foster, names):
         raise ValueError('gridwalk requires collision')
     if 'matrixbindings' in names and 'materialrefs' not in names:
         raise ValueError('matrixbindings requires materialrefs')
+    if 'submitbatch' in names and 'uniforms' not in names:
+        raise ValueError('submitbatch requires uniforms')
     if 'matrixupload' in names and 'matrixpaircopy' not in names:
         raise ValueError('matrixupload requires matrixpaircopy')
     if 'matrixpaircopy' in names and (not {'matrixbindings', 'matrixpair'} <= set(names)):
@@ -269,3 +271,6 @@ def optimize(out, port, game, foster, names):
             raise ValueError('nativecull requires frustum')
         from optimizations.nativecull import optimize_nativecull
         optimize_nativecull(out, port, override)
+    if 'submitbatch' in names:
+        from optimizations.submitbatch import optimize_submitbatch
+        optimize_submitbatch(out, port, foster, replace)
