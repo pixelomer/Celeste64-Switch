@@ -163,6 +163,8 @@ stage_options.add('inflatedcull')
 stage_options.add('stagecopybatch')
 stage_options.add('scalarbounds')
 stage_options.add('inversecache')
+stage_options.add('renderinterfaces')
+stage_options.add('leafinterop')
 allowed = {'spatial', 'late', 'frustum', 'collision', 'gridwalk', 'snow', 'snowphase', 'material', 'materialrefs', 'uniforms', 'glcache', 'textures', 'imagebytes', 'animation', 'sprites', 'spritefill', 'spritefields', 'snowsprite', 'snowfill', 'modelsort', 'shadowcache', 'hair', 'hairmesh', 'nativecull', 'modelbits', 'collisionmath', 'submitbatch'} | render_math_options | stage_options
 assert not set(optimizations) - allowed, set(optimizations) - allowed
 if optimizations:
@@ -189,6 +191,9 @@ if optimizations:
         assert {'renderprep', 'nativemath'} <= set(optimizations)
         from inverse_cache import optimize_inverse_cache
         optimize_inverse_cache(out, replace, override)
+    if 'renderinterfaces' in optimizations:
+        from render_interfaces import optimize_render_interfaces
+        optimize_render_interfaces(out, override)
     if 'skinbindings' in optimizations:
         assert 'animation' in optimizations
         from optimizations.skinbindings import optimize_skinbindings
@@ -235,6 +240,10 @@ if optimizations:
         assert 'nativecull' in optimizations
         from box_inflate import optimize_inflated_cull
         optimize_inflated_cull(out, here, replace, override)
+    if 'leafinterop' in optimizations:
+        assert {'stagecopybatch', 'nativeuniformcopy', 'nativemath'} <= set(optimizations)
+        from leaf_interop import optimize_leaf_interop
+        optimize_leaf_interop(out, replace)
 options = json.loads((out / 'build-options.json').read_text())
 options.update(game_commit='6edfe1ebd2a21a6134d7675a28e357891025407e', game_version='1.2.0', foster_input_commit='a5b574f36e5d8928a4d47566c7b924140b653c85', spirv_cross_commit='be71ee8c12cd7dc5ca8fa9581f708c2e8561fe2a', spirv_cross_binary_sha256=hashlib.sha256(cross.read_bytes()).hexdigest(), source_optimizations=optimizations, save_directory='sdmc:/switch/celeste64-v120', sharpgltf_version='1.0.5', sledge_version='1.2.8', animation_runtime_commit='4b28af2b6e5e30c6bade3f8baaf6b5e1a67ceb98' if 'animation' in optimizations else None, nacp_title=app_title, nacp_version='1.2.0-6edfe1e')
 (out / 'build-options.json').write_text(json.dumps(options, indent=2) + '\n')

@@ -1,0 +1,5 @@
+"""Cache immutable actor interface membership, not render results or geometry."""
+
+def optimize_render_interfaces(out, override):
+    override('Actors/Actor.cs', [('public class Actor\n{', 'public class Actor\n{\n    // RENDER_INTERFACE_CACHE\n    private bool renderInterfacesReady;\n    private IHaveSprites? renderSpriteSource;\n    private IHaveModels? renderModelSource;\n    internal void CollectRenderItems(List<Sprite> sprites,List<(Actor Actor,Model Model)> models)\n    {\n        if(!renderInterfacesReady)\n        {\n            renderSpriteSource=this as IHaveSprites;\n            renderModelSource=this as IHaveModels;\n            renderInterfacesReady=true;\n        }\n        renderSpriteSource?.CollectSprites(sprites);\n        renderModelSource?.CollectModels(models);\n    }\n    // END_RENDER_INTERFACE_CACHE\n')])
+    override('Scenes/World.cs', [('(actor as IHaveSprites)?.CollectSprites(sprites);\n\t\t\t\t(actor as IHaveModels)?.CollectModels(models);', 'actor.CollectRenderItems(sprites,models);')])
