@@ -4,8 +4,10 @@ set -euo pipefail
 # Recorded accepted set from the render audit. Set CELESTE64_OPTIMIZATIONS
 # explicitly to build a comparison with individual flags omitted.
 if [[ ! -v CELESTE64_OPTIMIZATIONS ]]; then
- export CELESTE64_OPTIMIZATIONS=spatial,late,frustum,material,collision,sprites,animation,uniforms,snow,renderprep,glcache,hair,textures,materialrefs,modelsort,hairmesh,rendermath,nativemath,nativehair,imagebytes,snowphase,gridwalk,imagelifetime,matrixbindings,skinbindings,animationmath,morphneutral,affinemath,spritefill,mathunroll,matrixpair,snowsprite,snowfill,shadowcache,spritefields,scalarbindings,drawableframe,indexedcurves,nativeskin,textoutline,posematrix,srtmatrix,nativeuniformcopy,jointbindings
+ export CELESTE64_OPTIMIZATIONS=spatial,late,frustum,material,collision,sprites,animation,uniforms,snow,renderprep,glcache,hair,textures,materialrefs,modelsort,hairmesh,rendermath,nativemath,nativehair,imagebytes,snowphase,gridwalk,imagelifetime,matrixbindings,skinbindings,animationmath,morphneutral,affinemath,spritefill,mathunroll,matrixpair,snowsprite,snowfill,shadowcache,spritefields,scalarbindings,drawableframe,indexedcurves,nativeskin,textoutline,posematrix,srtmatrix,nativeuniformcopy,jointbindings,matrixpaircopy,matrixupload,submitbatch,renderparams
 fi
+# Keep FMOD's preferred core separate from the Mesa worker on CPU1.
+export CELESTE64_AUDIO_PREFERRED_CORE=${CELESTE64_AUDIO_PREFERRED_CORE-2}
 export CELESTE64_AOT_OPTIMIZE=${CELESTE64_AOT_OPTIMIZE-aggressive-inlining}
 export CELESTE64_BUILD_NAME=${CELESTE64_BUILD_NAME-celeste64-switch-fmod-release}
 port_dir=$(cd "$(dirname "$0")" && pwd)
