@@ -45,6 +45,7 @@ archive="$root/artifacts/v120-builds/$artifact_hash"
 mkdir -p "$archive"
 cp celeste64-v120-dev.nro celeste64-switch.elf build/celeste64-switch.map \
  build-options.json source-files.json v120-inputs.json audio-inputs.json nro-metadata.json SHA256SUMS "$archive/"
+if [[ -f excluded-editor-content.json ]]; then cp excluded-editor-content.json "$archive/"; fi
 cp -r logs "$archive/"
 tar --exclude=bin --exclude=obj -czf "$archive/generated-sources.tar.gz" managed foster source Makefile
 echo "Deployment artifact: $archive/celeste64-v120-dev.nro"

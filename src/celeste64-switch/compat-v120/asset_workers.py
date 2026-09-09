@@ -1,0 +1,11 @@
+"""Allow background asset parsing on application CPUs, restoring prior affinity."""
+
+def optimize_asset_workers(out, replace):
+    (out / 'foster/switch_asset_workers.c').write_text('#include <switch.h>\n#include <stdint.h>\n#include <stdio.h>\n#include <stdatomic.h>\nstatic _Atomic unsigned masks[16], failures, cores[4];\nint64_t C64AssetWorkerBegin(void) {\n s32 ideal;u64 mask,allowed;\n if(R_FAILED(svcGetThreadCoreMask(&ideal,&mask,CUR_THREAD_HANDLE)) ||\n    R_FAILED(svcGetInfo(&allowed,InfoType_CoreMask,CUR_PROCESS_HANDLE,0)) || mask>UINT32_MAX || allowed>UINT32_MAX) {\n  atomic_fetch_add(&failures,1); return -1;\n }\n if(mask<16) atomic_fetch_add(&masks[mask],1);\n if(R_FAILED(svcSetThreadCoreMask(CUR_THREAD_HANDLE,-1,(u32)allowed))) {\n  atomic_fetch_add(&failures,1);return -1;\n }\n return (int64_t)((mask<<32)|(u32)ideal);\n}\nvoid C64AssetWorkerEnd(int64_t token) {\n u32 core=svcGetCurrentProcessorNumber();if(core<4) atomic_fetch_add(&cores[core],1);\n if(token==-1)return;\n if(R_FAILED(svcSetThreadCoreMask(CUR_THREAD_HANDLE,(s32)(u32)token,(u32)((u64)token>>32)))) atomic_fetch_add(&failures,1);\n}\nvoid C64AssetWorkerReport(FILE *f) {\n fprintf(f,"Asset affinity failures: %u\\n",atomic_load(&failures));\n for(int i=0;i<16;i++) if(atomic_load(&masks[i])) fprintf(f,"Original mask %X: %u tasks\\n",i,atomic_load(&masks[i]));\n for(int i=0;i<4;i++) fprintf(f,"Completion core %d: %u tasks\\n",i,atomic_load(&cores[i]));\n}\n')
+    (out / 'managed/Game/AssetWorkerScope.cs').write_text('using System.Runtime.InteropServices;\nnamespace Celeste64;\ninternal readonly struct AssetWorkerScope : IDisposable {\n [DllImport("FosterPlatform")] private static extern long C64AssetWorkerBegin();\n [DllImport("FosterPlatform")] private static extern void C64AssetWorkerEnd(long token);\n private readonly long token;\n public AssetWorkerScope() { token=C64AssetWorkerBegin(); }\n public void Dispose()=>C64AssetWorkerEnd(token);\n}\n')
+    p = out / 'managed/Game/Assets.cs'
+    s = p.read_text()
+    import re
+    s, count = re.subn('(tasks.Add\\(Task.Run\\(\\(\\) =>\\s*\\{)', '\\1\\n                    using var assetWorker=new AssetWorkerScope();', s)
+    assert count == 5, count
+    p.write_text(s)
