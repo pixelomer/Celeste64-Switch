@@ -1,12 +1,22 @@
 #!/usr/bin/env python3
 """Build the selected full-AOT release and a local SD installation ZIP."""
-import argparse, os, subprocess, sys
+import argparse, os, shutil, subprocess, sys
+from pathlib import Path
 from common import ROOT
 from preflight import environment
 p = argparse.ArgumentParser()
+p.add_argument('--icon', type=Path, help='Existing 256x256 baseline JPEG icon, cached under ignored local/icon.jpg')
 p.add_argument('--fmod-dir', help='Directory with the original Linux/Android 2.02.18 SDK archives')
 p.add_argument('--skip-fetch', action='store_true', help='Reuse already fetched, verified dependencies')
 a = p.parse_args()
+if a.icon:
+    icon = a.icon.resolve()
+    if not icon.is_file() or icon.read_bytes()[:2] != b'\xff\xd8':
+        raise SystemExit('--icon must be an existing JPEG file')
+    target = ROOT / 'local/icon.jpg'
+    target.parent.mkdir(exist_ok=True)
+    if icon != target:
+        shutil.copyfile(icon, target)
 try:
     env = environment()
 except RuntimeError as e:

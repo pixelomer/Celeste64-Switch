@@ -29,3 +29,6 @@ fmod-login.json
 *.tar.gz
 *.tar.xz
 *.keys
+
+# User-supplied artwork and other local build inputs.
+/local/

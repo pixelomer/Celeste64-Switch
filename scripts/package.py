@@ -8,8 +8,8 @@ def package():
     b = ROOT / 'artifacts/celeste64-switch-v120-bootstrap'
     meta = json.loads((b / 'build-options.json').read_text())
     assert all((meta[x] for x in ['aot_dedup', 'sprite_empty', 'sprite_stream', 'sprite_chunk']))
-    nro_name = 'celeste64-v120.nro'
-    files = {f'switch/{nro_name}': b / 'celeste64-switch.nro'}
+    nro_name = 'celeste64.nro'
+    files = {f'switch/celeste64/{nro_name}': b / 'celeste64-switch.nro'}
     for n in ['libfmod.so', 'libfmodstudio.so']:
         files['switch/celeste64/fmod/' + n] = ROOT / 'fmod/sdk/android' / n
     for p in (ROOT / 'licenses').iterdir():
@@ -25,7 +25,7 @@ def package():
     files['switch/celeste64/licenses/ATTRIBUTION.md'] = ROOT / 'THIRD_PARTY.md'
     files['switch/celeste64/licenses/Celeste64-Source-License.txt'] = ROOT / 'third_party/upstream/celeste64-v1.2-research/Source/License.txt'
     blobs = {n: p.read_bytes() for n, p in files.items()}
-    blobs['INSTALL.txt'] = ('Extract this ZIP into the root of your Switch SD card, merging the switch folder.\nLaunch ' + nro_name + ' with the Homebrew Menu in full application mode (hold R while launching a game).\nAlbum/applet mode does not provide enough memory. Requires a compatible homebrew setup.\nSaves use switch/celeste64-v120; existing saves are not included or overwritten.\nFMOD libraries use switch/celeste64/fmod. Keep both .so files.\nThis is an unofficial fan port, not made or endorsed by the Celeste team.\nThe generated package contains game assets and FMOD libraries under their own licenses;\nconsult their respective terms before redistribution.\n').encode()
+    blobs['INSTALL.txt'] = ('Extract this ZIP into the root of your Switch SD card, merging the switch folder.\nLaunch switch/celeste64/' + nro_name + ' with the Homebrew Menu in full application mode (hold R while launching a game).\nAlbum/applet mode does not provide enough memory. Requires a compatible homebrew setup.\nSaves and logs use switch/celeste64/userdata; existing saves are not included or overwritten.\nFor an older 1.2.0 installation, move switch/celeste64-v120 into switch/celeste64/userdata before launching.\nKeep older 1.1.1 saves in switch/celeste64 separate. Back up conflicting directories before merging.\nFMOD libraries use switch/celeste64/fmod. Keep both .so files.\nThis is an unofficial fan port, not made or endorsed by the Celeste team.\nThe generated package contains game assets and FMOD libraries under their own licenses;\nconsult their respective terms before redistribution.\n').encode()
     manifest = {'game_commit': meta['game_commit'], 'game_version': meta['game_version'], 'port_source_commit': meta['port_source_commit'], 'dependencies': json.loads((ROOT / 'dependencies.json').read_text()), 'mesa_archive_sha256': meta['mesa_archive_sha256'], 'files': {n: {'bytes': len(v), 'sha256': __import__('hashlib').sha256(v).hexdigest()} for n, v in blobs.items()}}
     blobs['BUILD-MANIFEST.json'] = (json.dumps(manifest, indent=2) + '\n').encode()
     dist = ROOT / 'dist'

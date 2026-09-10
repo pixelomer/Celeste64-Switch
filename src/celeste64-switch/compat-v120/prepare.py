@@ -61,7 +61,7 @@ for file in (latest / 'Source').rglob('*.cs'):
     (gd / relative.name).write_text(text)
 aliases = ['Input', 'Time', 'Keys', 'Buttons', 'Axes', 'MouseButtons', 'VirtualStick', 'VirtualAction', 'VirtualDevice', 'ActionBindingSet', 'StickBindingSet', 'GamepadProviders']
 (gd / 'V120Aliases.cs').write_text('\n'.join((f'global using {n} = Foster.V120.{n};' for n in aliases)) + '\n')
-program = (here.parent / 'managed/Program.cs').read_text().replace('1.1.1 FMOD', '1.2.0 (6edfe1e) FMOD').replace('sdmc:/switch/celeste64/', 'sdmc:/switch/celeste64-v120/')
+program = (here.parent / 'managed/Program.cs').read_text().replace('1.1.1 FMOD', '1.2.0 (6edfe1e) FMOD').replace('sdmc:/switch/celeste64/', 'sdmc:/switch/celeste64/userdata/')
 (gd / 'Program.cs').write_text(program)
 shutil.copy2(here.parent / 'managed/Audio.cs', gd / 'Audio.cs')
 shutil.copy2(latest / 'Source/Audio/Events.cs', gd / 'Events.cs')
@@ -107,12 +107,12 @@ foster_patch('Graphics/DrawCommand.cs', [('public struct DrawCommand()', 'public
 foster_patch('Graphics/Enums/TextureFormat.cs', [('Color = R8G8B8A8', 'Color = R8G8B8A8,\n    Depth16 = 3'), ('TextureFormat.Depth24Stencil8 => 4,', 'TextureFormat.Depth24Stencil8 => 4,\n            TextureFormat.Depth16 => 2,')])
 (fd / 'Foster.Framework.csproj').write_text(project)
 app = fd / 'App.cs'
-text = app.read_text().replace('sdmc:/switch/celeste64', 'sdmc:/switch/celeste64-v120')
+text = app.read_text().replace('sdmc:/switch/celeste64', 'sdmc:/switch/celeste64/userdata')
 text = replace(text, 'Time.Advance(delta);', 'Time.Advance(delta);\n            Foster.V120.LegacyClock.Advance(delta);')
 text = replace(text, 'Time.Advance(accumulator - Time.FixedStepMaxElapsedTime);', 'Time.Advance(accumulator - Time.FixedStepMaxElapsedTime);\n                Foster.V120.LegacyClock.Advance(accumulator - Time.FixedStepMaxElapsedTime);')
 app.write_text(text)
 main = out / 'source/main.c'
-main.write_text(main.read_text().replace('sdmc:/switch/celeste64', 'sdmc:/switch/celeste64-v120'))
+main.write_text(main.read_text().replace('    mkdir("sdmc:/switch/celeste64", 0777);', '    mkdir("sdmc:/switch/celeste64", 0777);\n    mkdir("sdmc:/switch/celeste64/userdata", 0777);'))
 shutil.copytree(latest / 'Content', out / 'romfs/Content', dirs_exist_ok=True)
 (out / 'excluded-editor-content.json').unlink(missing_ok=True)
 if os.environ.get('CELESTE64_V120_RUNTIME_CONTENT') == '1':
@@ -150,7 +150,7 @@ text = replace(text, 'case FOSTER_TEXTURE_FORMAT_DEPTH24_STENCIL8:', 'case FOSTE
 text = replace(text, 'if (attachments[i] == FOSTER_TEXTURE_FORMAT_DEPTH24_STENCIL8)', 'if (attachments[i] == FOSTER_TEXTURE_FORMAT_DEPTH16)\n        {\n            tex->glAttachment = GL_DEPTH_ATTACHMENT;\n        }\n        else if (attachments[i] == FOSTER_TEXTURE_FORMAT_DEPTH24_STENCIL8)')
 gl.write_text(text)
 make = out / 'Makefile'
-app_title = 'Celeste 64 v1.2.0'
+app_title = 'Celeste 64'
 make_text = make.read_text().replace('APP_VERSION := 1.1.1-a1', 'APP_VERSION := 1.2.0-6edfe1e')
 make_text, title_count = re.subn('^APP_TITLE := .*$', 'APP_TITLE := ' + app_title, make_text, flags=re.M)
 assert title_count == 1
@@ -287,5 +287,5 @@ if os.environ.get('CELESTE64_V120_ASSET_WORKERS') == '1':
     from asset_workers import optimize_asset_workers
     optimize_asset_workers(out, replace)
 options = json.loads((out / 'build-options.json').read_text())
-options.update(game_commit='6edfe1ebd2a21a6134d7675a28e357891025407e', game_version='1.2.0', foster_input_commit='a5b574f36e5d8928a4d47566c7b924140b653c85', spirv_cross_commit='be71ee8c12cd7dc5ca8fa9581f708c2e8561fe2a', spirv_cross_binary_sha256=hashlib.sha256(cross.read_bytes()).hexdigest(), sprite_pass_mesh=os.environ.get('CELESTE64_V120_SPRITE_PASS_MESH') == '1', sprite_empty=os.environ.get('CELESTE64_V120_SPRITE_EMPTY') == '1', sprite_stream=os.environ.get('CELESTE64_V120_SPRITE_STREAM') == '1', sprite_chunk=os.environ.get('CELESTE64_V120_SPRITE_CHUNK') == '1', aot_dedup=os.environ.get('CELESTE64_V120_AOT_DEDUP') == '1', aot_dedup_keep=[name for name in os.environ.get('CELESTE64_V120_AOT_DEDUP_KEEP', '').split(',') if name], asset_queue=os.environ.get('CELESTE64_V120_ASSET_QUEUE') == '1', asset_order=os.environ.get('CELESTE64_V120_ASSET_ORDER') == '1', asset_workers=os.environ.get('CELESTE64_V120_ASSET_WORKERS') == '1', runtime_content=os.environ.get('CELESTE64_V120_RUNTIME_CONTENT') == '1', source_optimizations=optimizations, save_directory='sdmc:/switch/celeste64-v120', sharpgltf_version='1.0.5', sledge_version='1.2.8', animation_runtime_commit='4b28af2b6e5e30c6bade3f8baaf6b5e1a67ceb98' if 'animation' in optimizations else None, nacp_title=app_title, nacp_version='1.2.0-6edfe1e')
+options.update(game_commit='6edfe1ebd2a21a6134d7675a28e357891025407e', game_version='1.2.0', foster_input_commit='a5b574f36e5d8928a4d47566c7b924140b653c85', spirv_cross_commit='be71ee8c12cd7dc5ca8fa9581f708c2e8561fe2a', spirv_cross_binary_sha256=hashlib.sha256(cross.read_bytes()).hexdigest(), sprite_pass_mesh=os.environ.get('CELESTE64_V120_SPRITE_PASS_MESH') == '1', sprite_empty=os.environ.get('CELESTE64_V120_SPRITE_EMPTY') == '1', sprite_stream=os.environ.get('CELESTE64_V120_SPRITE_STREAM') == '1', sprite_chunk=os.environ.get('CELESTE64_V120_SPRITE_CHUNK') == '1', aot_dedup=os.environ.get('CELESTE64_V120_AOT_DEDUP') == '1', aot_dedup_keep=[name for name in os.environ.get('CELESTE64_V120_AOT_DEDUP_KEEP', '').split(',') if name], asset_queue=os.environ.get('CELESTE64_V120_ASSET_QUEUE') == '1', asset_order=os.environ.get('CELESTE64_V120_ASSET_ORDER') == '1', asset_workers=os.environ.get('CELESTE64_V120_ASSET_WORKERS') == '1', runtime_content=os.environ.get('CELESTE64_V120_RUNTIME_CONTENT') == '1', source_optimizations=optimizations, save_directory='sdmc:/switch/celeste64/userdata', sharpgltf_version='1.0.5', sledge_version='1.2.8', animation_runtime_commit='4b28af2b6e5e30c6bade3f8baaf6b5e1a67ceb98' if 'animation' in optimizations else None, nacp_title=app_title, nacp_version='1.2.0-6edfe1e')
 (out / 'build-options.json').write_text(json.dumps(options, indent=2) + '\n')

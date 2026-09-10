@@ -63,7 +63,7 @@ class InstallPackage(unittest.TestCase):
                     self.assertEqual(hashlib.sha256(data).hexdigest(), v['sha256'])
                 for n in names:
                     self.assertFalse(n.startswith('/') or '..' in Path(n).parts)
-                    self.assertTrue(n in ['INSTALL.txt', 'BUILD-MANIFEST.json'] or n.startswith('switch/celeste64/licenses/') or n in ['switch/celeste64-v120.nro', 'switch/celeste64/fmod/libfmod.so', 'switch/celeste64/fmod/libfmodstudio.so'], n)
+                    self.assertTrue(n in ['INSTALL.txt', 'BUILD-MANIFEST.json'] or n.startswith('switch/celeste64/licenses/') or n in ['switch/celeste64/celeste64.nro', 'switch/celeste64/fmod/libfmod.so', 'switch/celeste64/fmod/libfmodstudio.so'], n)
                 for n in ['libfmod.so', 'libfmodstudio.so']:
                     data = z.read('switch/celeste64/fmod/' + n)
                     self.assertEqual(data[:5], b'\x7fELF\x02')

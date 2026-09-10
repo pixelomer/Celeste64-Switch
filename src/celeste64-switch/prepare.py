@@ -48,7 +48,7 @@ patch(game / 'Source/Data/Save.cs', out / 'managed/Game/Save.cs', [('File.Copy(t
 patch(mono / 'native/aot/source/main.c', out / 'source/main.c', [('#include <unistd.h>', '#include <unistd.h>\n#include <sys/stat.h>'), ('    romfsInit();', '    mkdir("sdmc:/switch", 0777);\n    mkdir("sdmc:/switch/celeste64", 0777);\n    romfsInit();')])
 make = (mono / 'native/aot/Makefile').read_text().replace('aot_example', 'celeste64-switch')
 make = 'APP_TITLE := Celeste 64 (silent Switch)\nAPP_AUTHOR := Celeste Team / homebrew port\nAPP_VERSION := 1.1.1-a1\n' + make
-icon_input = root / 'artifacts/celeste64-switch-metadata/icon.jpg'
+icon_input = root / 'local/icon.jpg'
 icon = out / 'icon.jpg'
 if icon_input.exists():
     shutil.copyfile(icon_input, icon)

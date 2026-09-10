@@ -31,12 +31,18 @@ original FMOD Studio API 2.02.18 Linux and Android archives:
 
 The result is `dist/celeste64-switch-1.2.0.zip`, with a SHA-256 checksum alongside it.
 Extract the ZIP into the root of the SD card, merging the `switch` folder. Run
-`celeste64-v120.nro` from the Homebrew Menu in **full application mode** (hold R
+`Celeste 64` (`switch/celeste64/celeste64.nro`) from the Homebrew Menu in **full application mode** (hold R
 while starting a game); Album/applet mode does not provide enough memory.
 Input supports one player using a Pro Controller, paired Joy-Cons, or handheld
 controls. Individual Joy-Cons and additional player controllers are not supported.
-Existing saves in `switch/celeste64-v120` are preserved. Keep both FMOD shared
-libraries under `switch/celeste64/fmod`.
+Saves, controls and logs live in `switch/celeste64/userdata`. Keep both FMOD shared
+libraries under `switch/celeste64/fmod`. When upgrading an earlier 1.2.0 build,
+[move its existing save directory](docs/BUILDING.md#upgrading-an-earlier-layout)
+before launching; installation ZIPs never overwrite saves.
+
+To embed your own existing 256x256 baseline JPEG menu icon, use
+`./build.sh --icon /path/to/icon.jpg`. It is cached in ignored `local/icon.jpg`
+for subsequent builds. Artwork is not bundled in this source repository.
 
 
 ## Source and licensing
