@@ -5,7 +5,7 @@ def optimize_sprite_stream(out, replace):
     p = out / 'managed/Foster/Mesh.cs'
     s = (p if p.exists() else source).read_text()
     anchor = 'internal IntPtr resource;'
-    s = replace(s, anchor, '// Opt in only when the caller replaces every vertex used by the next draw.\n    // SetSubVertices retains its original preservation semantics.\n    public bool StreamVertexWrites { get; set; }\n    internal static bool ForceOriginalStreamWrites;\n    [System.Runtime.InteropServices.DllImport("FosterPlatform", CallingConvention=System.Runtime.InteropServices.CallingConvention.Cdecl)]\n    private static extern void FosterMeshReplaceVertexData(IntPtr mesh, IntPtr data, int dataSize);\n    ' + anchor)
+    s = replace(s, anchor, '// Opt in only when the caller replaces every vertex used by the next draw.\n    // SetSubVertices retains its original preservation semantics.\n    public bool StreamVertexWrites { get; set; }\n    public static bool ForceOriginalStreamWrites;\n    [System.Runtime.InteropServices.DllImport("FosterPlatform", CallingConvention=System.Runtime.InteropServices.CallingConvention.Cdecl)]\n    private static extern void FosterMeshReplaceVertexData(IntPtr mesh, IntPtr data, int dataSize);\n    ' + anchor)
     anchor = '\t\tPlatform.FosterMeshSetVertexData('
     assert s.count(anchor) == 2
     s = s.replace(anchor, '        if (StreamVertexWrites && data != IntPtr.Zero && count > 0)\n        {\n            FosterMeshReplaceVertexData(resource, data, format.Stride * count);\n            return;\n        }\n' + anchor, 1)
