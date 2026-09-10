@@ -42,7 +42,10 @@ before launching; installation ZIPs never overwrite saves.
 
 To embed your own existing 256x256 baseline JPEG menu icon, use
 `./build.sh --icon /path/to/icon.jpg`. It is cached in ignored `local/icon.jpg`
-for subsequent builds. Artwork is not bundled in this source repository.
+for subsequent builds. Otherwise the build attempts to generate an icon from the
+[itch.io GIF banner](https://maddymakesgamesinc.itch.io/celeste64), using optional
+Python Pillow. If this fails, the build continues with the generic default icon.
+Artwork is downloaded or supplied locally and is not tracked in Git.
 
 
 ## Source and licensing

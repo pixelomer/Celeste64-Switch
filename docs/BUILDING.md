@@ -25,6 +25,8 @@ system package manager:
   references in generated projects.
 - Git, Python **3.12+**, Python Mako, CMake, Ninja, Meson, GNU Make, patch, GCC/G++,
   pkg-config and a JDK supplying JNI headers (JDK 17 or 21 is suitable).
+- Optional Python Pillow (`python3-pil` on Debian/Ubuntu or `python3-pillow` on
+  Fedora) for generating the menu icon from the itch.io banner.
 
 For example, Debian/Ubuntu build utilities can be installed with
 `apt install git python3 python3-mako cmake ninja-build meson build-essential patch pkg-config openjdk-21-jdk`.

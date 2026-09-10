@@ -49,6 +49,8 @@ patch(mono / 'native/aot/source/main.c', out / 'source/main.c', [('#include <uni
 make = (mono / 'native/aot/Makefile').read_text().replace('aot_example', 'celeste64-switch')
 make = 'APP_TITLE := Celeste 64 (silent Switch)\nAPP_AUTHOR := Celeste Team / homebrew port\nAPP_VERSION := 1.1.1-a1\n' + make
 icon_input = root / 'local/icon.jpg'
+if not icon_input.is_file():
+    icon_input = root / 'artifacts/celeste64-switch-metadata/icon.jpg'
 icon = out / 'icon.jpg'
 if icon_input.exists():
     shutil.copyfile(icon_input, icon)
