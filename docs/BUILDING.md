@@ -41,6 +41,35 @@ to check dependencies without fetching or building anything. In particular,
 older libnx releases are unsuitable for Horizon 21+ because of its TLS ABI change.
 The tested toolchain is devkitA64 15.2.0, libnx 4.12.0 and .NET SDK 10.0.111.
 
+### Docker
+
+The included `Dockerfile` provides the complete Linux x86-64 host toolchain. It
+uses digest-pinned devkitPro, Python and .NET images, and does not copy the source
+tree or build inputs into an image layer. Build it and run the release build from
+the repository root:
+
+```sh
+docker build --platform linux/amd64 -t celeste64-switch-builder .
+docker run --rm --platform linux/amd64 \
+  --user "$(id -u):$(id -g)" \
+  --volume "$PWD:/work" \
+  celeste64-switch-builder
+```
+
+The bind mount places the resulting ZIP and checksum in the host's `dist/`
+directory and keeps downloaded dependencies in the normal ignored directories.
+Running with the host user avoids root-owned build outputs. The default command
+is `./build.sh`; append its normal options after the image name. For example,
+mount a local FMOD archive directory read-only and pass it through with:
+
+```sh
+docker run --rm --platform linux/amd64 \
+  --user "$(id -u):$(id -g)" \
+  --volume "$PWD:/work" \
+  --volume "/path/to/fmod-archives:/fmod-archives:ro" \
+  celeste64-switch-builder ./build.sh --fmod-dir /fmod-archives
+```
+
 ## Dependency fetching
 
 `dependencies.json` records exact Git revisions and archive SHA-256 digests.
