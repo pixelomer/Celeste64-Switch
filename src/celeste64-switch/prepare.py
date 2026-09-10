@@ -62,14 +62,19 @@ make = make.replace('$(CURDIR)/$(dir)', '$(abspath $(dir))')
 make = make.replace('source \\', 'source \\\n                foster \\')
 make = make.replace('-DDLSHIM_DISABLE=1', f'-DDLSHIM_DISABLE=1 -DFOSTER_OPENGL_ENABLED -I{foster}/Platform/include -I{foster}/Platform/src -I$(PORTLIBS)/include/SDL2')
 make = make.replace('-pthread -lnx -lm -lstdc++', '-Wl,--start-group -lSDL2 -lEGL -lglapi -ldrm_nouveau -pthread -lnx -lm -lstdc++ -Wl,--end-group')
+make += '\nLDFLAGS += -Wl,--wrap=padConfigureInput,--wrap=hidLaShowControllerSupportForSystem\n'
 (out / 'Makefile').write_text(make)
 (out / 'foster').mkdir(exist_ok=True)
 for generated in (out / 'foster').glob('switch_*.c'):
     generated.unlink()
+shutil.copyfile(port / 'input.c', out / 'foster/switch_input.c')
 for file in (foster / 'Platform/src').glob('*.c'):
     text = file.read_text().replace('SDL_GL_MULTISAMPLEBUFFERS, 1', 'SDL_GL_MULTISAMPLEBUFFERS, 0').replace('SDL_GL_MULTISAMPLESAMPLES, 4', 'SDL_GL_MULTISAMPLESAMPLES, 0')
     if file.name == 'foster_platform.c':
         text = '#include <switch.h>\n' + text
+        old = 'index >= 0 && index < FOSTER_MAX_CONTROLLERS'
+        assert text.count(old) == 2
+        text = text.replace(old, 'index == 0')
         old = 'SDL_GetWindowSizeInPixels(fstate.window, width, height);'
         assert text.count(old) == 1
         text = text.replace(old, 'SDL_GetWindowSizeInPixels(fstate.window, width, height);\n    int sdlWidth = *width, sdlHeight = *height;\n    u32 nativeWidth, nativeHeight;\n    if (R_SUCCEEDED(nwindowGetDimensions(nwindowGetDefault(), &nativeWidth, &nativeHeight)) &&\n        nativeWidth > 0 && nativeHeight > 0) {\n        *width = (int)nativeWidth;\n        *height = (int)nativeHeight;\n    }\n    static int lastSdlWidth = 0, lastNativeWidth = 0;\n    if (lastSdlWidth != sdlWidth || lastNativeWidth != *width) {\n        FosterLogInfo("Switch drawable: SDL=%dx%d native=%dx%d", sdlWidth, sdlHeight, *width, *height);\n        lastSdlWidth = sdlWidth;\n        lastNativeWidth = *width;\n    }')

@@ -33,6 +33,8 @@ The result is `dist/celeste64-switch-1.2.0.zip`, with a SHA-256 checksum alongsi
 Extract the ZIP into the root of the SD card, merging the `switch` folder. Run
 `celeste64-v120.nro` from the Homebrew Menu in **full application mode** (hold R
 while starting a game); Album/applet mode does not provide enough memory.
+Input supports one player using a Pro Controller, paired Joy-Cons, or handheld
+controls. Individual Joy-Cons and additional player controllers are not supported.
 Existing saves in `switch/celeste64-v120` are preserved. Keep both FMOD shared
 libraries under `switch/celeste64/fmod`.
 
