@@ -268,12 +268,15 @@ if os.environ.get('CELESTE64_V120_SPRITE_EMPTY') == '1':
 if os.environ.get('CELESTE64_V120_SPRITE_PASS_MESH') == '1':
     assert 'spritefill' in optimizations
     assert os.environ.get('CELESTE64_V120_SPRITE_STREAM') != '1'
+    assert os.environ.get('CELESTE64_V120_SPRITE_CHUNK') != '1'
     from sprite_pass_mesh import optimize_sprite_pass_mesh
     optimize_sprite_pass_mesh(out, replace)
-if os.environ.get('CELESTE64_V120_SPRITE_STREAM') == '1':
+if os.environ.get('CELESTE64_V120_SPRITE_STREAM') == '1' or os.environ.get('CELESTE64_V120_SPRITE_CHUNK') == '1':
     assert 'spritefill' in optimizations
     from sprite_stream import optimize_sprite_stream
-    optimize_sprite_stream(out, replace)
+    if os.environ.get('CELESTE64_V120_SPRITE_CHUNK') == '1':
+        assert os.environ.get('CELESTE64_V120_MESA_WORKER') == '1'
+    optimize_sprite_stream(out, replace, os.environ.get('CELESTE64_V120_SPRITE_STREAM') == '1', os.environ.get('CELESTE64_V120_SPRITE_CHUNK') == '1')
 if os.environ.get('CELESTE64_V120_ASSET_QUEUE') == '1':
     from asset_queue import optimize_asset_queue
     optimize_asset_queue(out, replace)
@@ -284,5 +287,5 @@ if os.environ.get('CELESTE64_V120_ASSET_WORKERS') == '1':
     from asset_workers import optimize_asset_workers
     optimize_asset_workers(out, replace)
 options = json.loads((out / 'build-options.json').read_text())
-options.update(game_commit='6edfe1ebd2a21a6134d7675a28e357891025407e', game_version='1.2.0', foster_input_commit='a5b574f36e5d8928a4d47566c7b924140b653c85', spirv_cross_commit='be71ee8c12cd7dc5ca8fa9581f708c2e8561fe2a', spirv_cross_binary_sha256=hashlib.sha256(cross.read_bytes()).hexdigest(), sprite_pass_mesh=os.environ.get('CELESTE64_V120_SPRITE_PASS_MESH') == '1', sprite_empty=os.environ.get('CELESTE64_V120_SPRITE_EMPTY') == '1', sprite_stream=os.environ.get('CELESTE64_V120_SPRITE_STREAM') == '1', aot_dedup=os.environ.get('CELESTE64_V120_AOT_DEDUP') == '1', aot_dedup_keep=[name for name in os.environ.get('CELESTE64_V120_AOT_DEDUP_KEEP', '').split(',') if name], asset_queue=os.environ.get('CELESTE64_V120_ASSET_QUEUE') == '1', asset_order=os.environ.get('CELESTE64_V120_ASSET_ORDER') == '1', asset_workers=os.environ.get('CELESTE64_V120_ASSET_WORKERS') == '1', runtime_content=os.environ.get('CELESTE64_V120_RUNTIME_CONTENT') == '1', source_optimizations=optimizations, save_directory='sdmc:/switch/celeste64-v120', sharpgltf_version='1.0.5', sledge_version='1.2.8', animation_runtime_commit='4b28af2b6e5e30c6bade3f8baaf6b5e1a67ceb98' if 'animation' in optimizations else None, nacp_title=app_title, nacp_version='1.2.0-6edfe1e')
+options.update(game_commit='6edfe1ebd2a21a6134d7675a28e357891025407e', game_version='1.2.0', foster_input_commit='a5b574f36e5d8928a4d47566c7b924140b653c85', spirv_cross_commit='be71ee8c12cd7dc5ca8fa9581f708c2e8561fe2a', spirv_cross_binary_sha256=hashlib.sha256(cross.read_bytes()).hexdigest(), sprite_pass_mesh=os.environ.get('CELESTE64_V120_SPRITE_PASS_MESH') == '1', sprite_empty=os.environ.get('CELESTE64_V120_SPRITE_EMPTY') == '1', sprite_stream=os.environ.get('CELESTE64_V120_SPRITE_STREAM') == '1', sprite_chunk=os.environ.get('CELESTE64_V120_SPRITE_CHUNK') == '1', aot_dedup=os.environ.get('CELESTE64_V120_AOT_DEDUP') == '1', aot_dedup_keep=[name for name in os.environ.get('CELESTE64_V120_AOT_DEDUP_KEEP', '').split(',') if name], asset_queue=os.environ.get('CELESTE64_V120_ASSET_QUEUE') == '1', asset_order=os.environ.get('CELESTE64_V120_ASSET_ORDER') == '1', asset_workers=os.environ.get('CELESTE64_V120_ASSET_WORKERS') == '1', runtime_content=os.environ.get('CELESTE64_V120_RUNTIME_CONTENT') == '1', source_optimizations=optimizations, save_directory='sdmc:/switch/celeste64-v120', sharpgltf_version='1.0.5', sledge_version='1.2.8', animation_runtime_commit='4b28af2b6e5e30c6bade3f8baaf6b5e1a67ceb98' if 'animation' in optimizations else None, nacp_title=app_title, nacp_version='1.2.0-6edfe1e')
 (out / 'build-options.json').write_text(json.dumps(options, indent=2) + '\n')
