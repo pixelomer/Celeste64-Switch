@@ -5,6 +5,7 @@
 /dist/
 .env
 fmod-login.json
+.fmod-account-*
 **/bin/
 **/obj/
 **/__pycache__/

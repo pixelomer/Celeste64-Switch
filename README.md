@@ -19,9 +19,11 @@ Then run:
 ```
 
 The first build downloads sources, the pinned Mono/ICU SDK, and Mesa source inputs.
-FMOD requires an existing account; the downloader prompts for your credentials
-without saving them. Alternatively, supply the original FMOD Studio API 2.02.18
-Linux and Android archives:
+If FMOD archives are missing, the downloader automatically creates and verifies an
+FMOD account using [mail.tm](https://mail.tm), then downloads both SDKs. Generated
+credentials are reused from the ignored, owner-only `fmod-login.json` file.
+Alternatively, [download the SDKs manually](docs/BUILDING.md#fmod) and supply the
+original FMOD Studio API 2.02.18 Linux and Android archives:
 
 ```sh
 ./build.sh --fmod-dir /path/to/fmod-archives

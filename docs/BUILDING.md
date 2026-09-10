@@ -73,7 +73,7 @@ commercial game dump, Nintendo SDK, console keys, or a pre-existing port build.
 
 ## FMOD
 
-`scripts/download-fmod.sh` adapts the authenticated login and download-link flow
+`scripts/download-fmod.sh` adapts the automatic registration, verification, login and download flow
 from [pixelomer/Celeste-FMOD2](https://github.com/pixelomer/Celeste-FMOD2/blob/main/download-fmod.sh).
 It requests **FMOD Studio API 2.02.18 for Linux and Android** from FMOD's servers
 and verifies archive hashes. Linux supplies headers; Android supplies ARM64 shared
@@ -81,22 +81,53 @@ libraries. Both original archive layouts, including the nested Linux archive,
 are handled. The Switch audio backend implements Android-compatible loading and
 uses the homebrew audio service; no proprietary Switch FMOD SDK is required.
 
-Use an existing FMOD account with access to the downloads. The script does not
-create accounts, use disposable email, save passwords, or echo tokens. In a
-noninteractive build, provide `FMOD_USERNAME` and `FMOD_PASSWORD` through your
-secret environment. Do not put secrets in Git or command-line arguments.
+When either archive is missing, the default build creates a temporary mailbox
+through [mail.tm](https://mail.tm), registers an FMOD account without subscribing
+to newsletters, verifies its email, and downloads the pinned SDKs automatically.
+Generated account credentials and registration progress are stored in the ignored
+`fmod-login.json` at the repository root, with file permissions `0600`. Treat this
+file as a secret: do not share or commit it. Passwords and tokens are never printed.
+Later runs reuse the account; an interrupted verification resumes the same account.
+The verification wait defaults to 180 seconds, after which the script exits.
 
-The manual alternative is to download these original archives yourself and run
-`./build.sh --fmod-dir /path/to/archives`:
+To use your own account, provide both `FMOD_USERNAME` and `FMOD_PASSWORD` through
+your secret environment. These override saved credentials and are not written to
+disk. For an interactive password prompt without automatic registration, run:
+
+```sh
+./scripts/download-fmod.sh --existing-account
+./build.sh
+```
+
+To **download manually**, sign in to your own account at the
+[FMOD downloads page](https://www.fmod.com/download), choose **FMOD Studio API
+2.02.18**, and download the **Linux** and **Android** SDK archives. Keep the original
+archives, without extracting or renaming them, together in a directory:
 
 - `fmodstudioapi20218linux.tar.gz`
 - `fmodstudioapi20218android.tar.gz`
 
-Already verified archives in `fmod/` are reused. A checksum mismatch is a hard
-failure; do not disable verification to accept a different API version. If FMOD
-changes its website authentication, the manual archive path remains supported.
-The local-archive flow is tested; live account authentication requires credentials
-and has separate service availability from the public source downloads.
+Then run:
+
+```sh
+./build.sh --fmod-dir /path/to/archives
+```
+
+Or import just the SDK archives before building:
+
+```sh
+./scripts/download-fmod.sh --archive-dir /path/to/archives
+```
+
+Manual archive import and verified cached archives require no account creation or
+network access from the downloader. Already verified archives in `fmod/` are reused.
+A checksum mismatch is a hard failure; do not disable verification to accept a
+different API version. The downloader can also be run separately with
+`--email-timeout 300` to extend the verification wait. Automatic registration and
+downloads depend on FMOD and mail.tm availability; existing-account login and
+manual archives remain alternatives if those services reject or change the flow.
+The automatic account/verification/download flow and both pinned archive hashes
+were verified with the live services on 2026-09-10.
 
 ## Outputs and installation
 
