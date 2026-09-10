@@ -1,31 +1,42 @@
 #!/usr/bin/env python3
-"""Extract only local public-platform FMOD SDK inputs into ignored fmod/."""
-import pathlib, tarfile, hashlib, json
-root = pathlib.Path(__file__).resolve().parents[3]
+"""Extract verified public-platform FMOD headers and libraries into ignored build inputs."""
+import hashlib, io, json, tarfile
+from pathlib import Path
+root = Path(__file__).resolve().parents[3]
 out = root / 'fmod/sdk'
 out.mkdir(parents=True, exist_ok=True)
-linux = root / 'fmod/inspection/linux/sdk.tar.gz'
-if not linux.exists():
-    with tarfile.open(root / 'fmod/fmodstudioapi20218linux.tar.gz') as archive:
-        nested = [m for m in archive if m.isfile() and m.name.endswith('.tar.gz')]
-        if len(nested) != 1:
-            raise RuntimeError('Expected one nested Linux SDK archive')
-        linux.parent.mkdir(parents=True, exist_ok=True)
-        linux.write_bytes(archive.extractfile(nested[0]).read())
+lock = json.loads((root / 'dependencies.json').read_text())['fmod']['platforms']
 inputs = {}
-for platform, archive in [('linux', linux), ('android', root / 'fmod/fmodstudioapi20218android.tar.gz')]:
-    inputs[platform] = hashlib.sha256(archive.read_bytes()).hexdigest()
-    with tarfile.open(archive) as t:
-        for m in t:
-            if not m.isfile():
+for platform, item in lock.items():
+    archive = root / 'fmod' / item['filename']
+    data = archive.read_bytes()
+    if hashlib.sha256(data).hexdigest() != item['sha256']:
+        raise RuntimeError('FMOD SDK checksum mismatch: ' + item['filename'])
+    inputs[platform] = item['sha256']
+    for depth in range(2):
+        with tarfile.open(fileobj=io.BytesIO(data)) as t:
+            members = t.getmembers()
+            nested = [m for m in members if m.isfile() and m.name.endswith('.tar.gz')]
+            if platform == 'linux' and (not any(('/api/core/inc/' in m.name for m in members))) and (len(nested) == 1):
+                data = t.extractfile(nested[0]).read()
                 continue
-            p = m.name
-            is_header = platform == 'linux' and ('/api/core/inc/' in p or '/api/studio/inc/' in p)
-            is_lib = ('/lib/x86_64/' if platform == 'linux' else '/lib/arm64-v8a/') in p
-            if is_header or is_lib:
-                dst = out / ('inc' if is_header else platform) / pathlib.Path(p).name
-                dst.parent.mkdir(exist_ok=True)
-                dst.write_bytes(t.extractfile(m).read())
-manifest = root / 'artifacts/port-research/fmod/sdk-inputs.json'
-manifest.parent.mkdir(parents=True, exist_ok=True)
-manifest.write_text(json.dumps(inputs, indent=2))
+            for m in members:
+                if not m.isfile():
+                    continue
+                p = m.name
+                header = platform == 'linux' and ('/api/core/inc/' in p or '/api/studio/inc/' in p)
+                lib = ('/lib/x86_64/' if platform == 'linux' else '/lib/arm64-v8a/') in p
+                license = p.endswith('/doc/LICENSE.TXT')
+                if header or lib or license:
+                    dest = out / ('inc' if header else platform) / Path(p).name
+                    dest.parent.mkdir(exist_ok=True)
+                    dest.write_bytes(t.extractfile(m).read())
+            break
+    else:
+        raise RuntimeError('Unrecognized nested FMOD SDK layout')
+for name in ['inc/fmod.h', 'inc/fmod_studio.h', 'android/libfmod.so', 'android/libfmodstudio.so', 'android/LICENSE.TXT']:
+    if not (out / name).is_file():
+        raise RuntimeError('Missing FMOD SDK input: ' + name)
+manifest = root / 'artifacts/fmod-sdk-inputs.json'
+manifest.parent.mkdir(exist_ok=True)
+manifest.write_text(json.dumps(inputs, indent=2) + '\n')

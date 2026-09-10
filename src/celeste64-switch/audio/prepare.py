@@ -1,6 +1,6 @@
 """Prepare native FMOD loader inputs from pinned, locally supplied SDKs."""
 from pathlib import Path
-import hashlib, json, subprocess, os, os
+import hashlib, json, subprocess, os
 
 def prepare_audio(root, out):
     preferred_core = os.environ.get('CELESTE64_AUDIO_PREFERRED_CORE', '1')
