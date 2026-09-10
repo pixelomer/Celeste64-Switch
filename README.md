@@ -1,5 +1,19 @@
 # Celeste 64 for Nintendo Switch
 
+> [!IMPORTANT]
+> AI assistance was heavily used for this port. Most of the work was done by
+> GPT-6 Astra. The produced code was not audited or verified by a human beyond
+> running the compiled NRO on a real Nintendo Switch. Human maintainability or
+> readability was not a goal for this project.
+>
+> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+> IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+> FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+> AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+> LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+> OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+> SOFTWARE.
+
 An unofficial homebrew port of **Celeste 64: Fragments of the Mountain**, based on
 upstream commit `6edfe1e` (version 1.2.0). This is a fan port, not made or endorsed
 by the Celeste team.
