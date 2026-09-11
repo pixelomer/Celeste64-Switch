@@ -18,10 +18,11 @@ An unofficial homebrew port of **Celeste 64: Fragments of the Mountain**, based 
 upstream commit `6edfe1e` (version 1.2.0). This is a fan port, not made or endorsed
 by the Celeste team.
 
-The build fetches pinned upstream sources, generates the compatibility and
-optimization patches, compiles a fully AOT Mono executable, and creates an SD-card
-installation ZIP. There is no JIT or interpreter fallback. Graphics, game mechanics,
-audio and localization are preserved.
+This branch builds a NativeAOT executable with the complete FMOD 2.02.18 backend
+and creates a local SD installation ZIP. It requires the separate experimental
+Horizon .NET 9 runtime described in [NATIVEAOT.md](docs/NATIVEAOT.md). The existing
+Mono build remains available with `--runtime mono`. There is no JIT fallback.
+NativeAOT application validation is ongoing; this branch is not a finished release.
 
 ## Build
 
@@ -29,7 +30,7 @@ Use **Linux x86-64**, with the dependencies in [BUILDING.md](docs/BUILDING.md).
 Then run:
 
 ```sh
-./build.sh
+./build.sh --nativeaot-runtime /path/to/horizon-runtime
 ```
 
 The first build downloads sources, the pinned Mono/ICU SDK, and Mesa source inputs.
@@ -40,19 +41,18 @@ Alternatively, [download the SDKs manually](docs/BUILDING.md#fmod) and supply th
 original FMOD Studio API 2.02.18 Linux and Android archives:
 
 ```sh
-./build.sh --fmod-dir /path/to/fmod-archives
+./build.sh --nativeaot-runtime /path/to/horizon-runtime --fmod-dir /path/to/fmod-archives
 ```
 
-The result is `dist/celeste64-switch-1.2.0.zip`, with a SHA-256 checksum alongside it.
+The result is `dist/celeste64-switch-1.2.0-nativeaot.zip`, with a SHA-256 checksum
+alongside it. `./build.sh --runtime mono` retains the original Mono package name.
 Extract the ZIP into the root of the SD card, merging the `switch` folder. Run
 `Celeste 64` (`switch/celeste64/celeste64.nro`) from the Homebrew Menu in **full application mode** (hold R
 while starting a game); Album/applet mode does not provide enough memory.
 Input supports one player using a Pro Controller, paired Joy-Cons, or handheld
 controls. Individual Joy-Cons and additional player controllers are not supported.
-Saves, controls and logs live in `switch/celeste64/userdata`. Keep both FMOD shared
-libraries under `switch/celeste64/fmod`. When upgrading an earlier 1.2.0 build,
-[move its existing save directory](docs/BUILDING.md#upgrading-an-earlier-layout)
-before launching; installation ZIPs never overwrite saves.
+Saves and controls live in `switch/celeste64/userdata`. Keep both FMOD shared
+libraries under `switch/celeste64/fmod`; installation ZIPs never overwrite saves.
 
 To embed your own existing 256x256 baseline JPEG menu icon, use
 `./build.sh --icon /path/to/icon.jpg`. It is cached in ignored `local/icon.jpg`
@@ -72,4 +72,5 @@ See [THIRD_PARTY.md](THIRD_PARTY.md) for upstream licenses and distribution boun
 
 - [Build requirements, dependency pins and troubleshooting](docs/BUILDING.md)
 - [Optimization and compatibility notes](docs/OPTIMIZATIONS.md)
+- [NativeAOT runtime requirements and status](docs/NATIVEAOT.md)
 - [Third-party attribution](THIRD_PARTY.md)

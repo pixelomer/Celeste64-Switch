@@ -1,5 +1,10 @@
 # Building
 
+The default on this branch is NativeAOT. Supply a separately built experimental
+Horizon runtime with `--nativeaot-runtime /path/to/horizon-runtime` or
+`NATIVEAOT_RUNTIME_ROOT`; see [NATIVEAOT.md](NATIVEAOT.md). The original self-contained
+Mono SDK recipe remains available with `./build.sh --runtime mono`.
+
 ## Administrator-provided dependencies
 
 The supported host is Linux x86-64. The public Mono AOT SDK contains an x86-64
@@ -53,13 +58,17 @@ docker build --platform linux/amd64 -t celeste64-switch-builder .
 docker run --rm --platform linux/amd64 \
   --user "$(id -u):$(id -g)" \
   --volume "$PWD:/work" \
-  celeste64-switch-builder
+  celeste64-switch-builder ./build.sh --runtime mono
 ```
 
 The bind mount places the resulting ZIP and checksum in the host's `dist/`
 directory and keeps downloaded dependencies in the normal ignored directories.
 Running with the host user avoids root-owned build outputs. The default command
-is `./build.sh`; append its normal options after the image name. For example,
+is `./build.sh`; NativeAOT additionally needs the separately built Horizon runtime
+mounted at its selected path. For example, add
+`--volume "/path/to/horizon-runtime:/runtime:ro"` and pass
+`./build.sh --nativeaot-runtime /runtime` after the image name. The runtime's
+archives and managed SDK libraries must already be built. For a Mono build,
 mount a local FMOD archive directory read-only and pass it through with:
 
 ```sh
@@ -67,7 +76,7 @@ docker run --rm --platform linux/amd64 \
   --user "$(id -u):$(id -g)" \
   --volume "$PWD:/work" \
   --volume "/path/to/fmod-archives:/fmod-archives:ro" \
-  celeste64-switch-builder ./build.sh --fmod-dir /fmod-archives
+  celeste64-switch-builder ./build.sh --runtime mono --fmod-dir /fmod-archives
 ```
 
 ## Dependency fetching
