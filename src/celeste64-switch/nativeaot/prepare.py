@@ -4,7 +4,7 @@ Linux ARM64 is an intermediate ILC code-generation target. Its runtime archives
 are not a substitute for the source-built Horizon runtime.
 """
 from pathlib import Path
-import json, re, shutil, subprocess, sys
+import json, os, re, shutil, subprocess, sys
 import xml.etree.ElementTree as ET
 
 here = Path(__file__).resolve().parent
@@ -35,6 +35,16 @@ shutil.copy2(here / "EntryPoint.cs", project.parent / "NativeAotEntryPoint.cs")
 for name in ("build-options.json", "source-files.json", "v120-inputs.json", "audio-inputs.json"):
     if (source / name).exists():
         shutil.copy2(source / name, out / name)
+# Compatibility preparation originated in the Mono pipeline. Its compiler
+# settings do not describe the NativeAOT object that this stage actually emits.
+options_path = out / "build-options.json"
+options = json.loads(options_path.read_text())
+for key in ("aot_optimize", "mono_sdk_configuration", "aot_trampolines",
+            "aot_dedup", "aot_dedup_keep"):
+    options.pop(key, None)
+options.update(runtime_mode="NativeAOT", ilc_version="9.0.3",
+               ilc_optimization="Speed", inline_thread_statics=False)
+options_path.write_text(json.dumps(options, indent=2) + "\n")
 (out / "stage.json").write_text(json.dumps({
     "stage": "managed-nativeaot-compilation-only",
     "runtime_package": "9.0.3",

@@ -31,7 +31,8 @@ shutil.copy2(icu/'share/icu/77.1/icudt77l.dat',out/'romfs/icudt77l.dat')
 (out/'source').mkdir(exist_ok=True)
 shutil.copy2(here/'main.c',out/'source/main.c')
 for name in ('icon.jpg','build-options.json','v120-inputs.json','audio-inputs.json'):
-    if (source/name).exists():shutil.copy2(source/name,out/name)
+    origin = managed if name == 'build-options.json' else source
+    if (origin/name).exists():shutil.copy2(origin/name,out/name)
 script=runtime/'src/coreclr/nativeaot/Runtime/libnx/create-linker-script.py'
 subprocess.run(['python3',str(script),str(out/'switch.ld')],check=True)
 specs=(dkp/'libnx/switch.specs').read_text()
@@ -68,4 +69,12 @@ manifest={'port_commit':subprocess.check_output(['git','rev-parse','HEAD'],cwd=r
  'inputs_sha256':{str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in [obj,*native,*sorted(sdk.glob('*.dll')),here/'main.c',here/'build-native.py',out/'switch.ld']},
  'nro_sha256':hashlib.sha256((out/'celeste64-switch.nro').read_bytes()).hexdigest()}
 (out/'nativeaot-link.json').write_text(json.dumps(manifest,indent=2)+'\n')
+# Keep symbols and build identity together before the next generated build
+# replaces them. Generated build artifacts are excluded from source control.
+archive=root/'artifacts/nativeaot-builds'/manifest['nro_sha256']
+archive.mkdir(parents=True,exist_ok=True)
+for file in (out/'celeste64-switch.nro',out/'celeste64-switch.elf',
+             out/'build/celeste64-switch.map',out/'nativeaot-link.json',
+             out/'build-options.json',managed/'stage.json',obj):
+    shutil.copy2(file,archive/file.name)
 print(out/'celeste64-switch.nro')

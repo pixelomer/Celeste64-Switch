@@ -19,3 +19,15 @@ LogicalIndex access. JSON extras, extension data and deep cloning are retained.
 Managed compilation uses ILC `--noinlinetls` and rejects direct TPIDR_EL0
 thread-static accesses or TLS relocations in the generated object. Horizon uses
 libnx software TLS, so the runtime helper path is retained.
+
+The native stage links the managed object against a compatible source-built
+Horizon runtime and BCL archives. Set `NATIVEAOT_RUNTIME_ROOT` to that separate
+runtime checkout for both managed and native stages, then run
+`python3 src/celeste64-switch/nativeaot/build-native.py` after the managed stage.
+Use the runtime's matching Horizon CoreLib and SDK libraries rather than Linux
+runtime libraries. `ICU_NX_INSTALL_DIR` can select a compatible Horizon ICU
+installation.
+
+The launcher retains ICU, TLS, GC and native workers until process exit. The
+full FMOD backend and renderer remain unchanged. Compiler and linker metadata
+are generated locally alongside other ignored build outputs.
