@@ -25,6 +25,9 @@ ET.SubElement(props, "PublishAot").text = "true"
 ET.SubElement(props, "NativeLib").text = "Static"
 # Full culture/JSON behavior is retained; NativeAOT warnings are not suppressed.
 items = ET.SubElement(tree.getroot(), "ItemGroup")
+# Linux's inline TLS sequence reads TPIDR_EL0. Horizon uses libnx software TLS;
+# retain the runtime helper path instead of relying on a fabricated Linux TCB.
+ET.SubElement(items, "IlcArg", Include="--noinlinetls")
 for name in ("__Internal", "FosterPlatform"):
     ET.SubElement(items, "DirectPInvoke", Include=name)
 tree.write(project, encoding="unicode")
@@ -36,6 +39,7 @@ for name in ("build-options.json", "source-files.json", "v120-inputs.json", "aud
     "stage": "managed-nativeaot-compilation-only",
     "runtime_package": "9.0.3",
     "ilc_target": "linux-arm64",
+    "inline_thread_statics": False,
     "horizon_runtime_validated": False,
     "fmod": "2.02.18",
     "entrypoint": "C64ManagedMain",

@@ -15,3 +15,7 @@ testing.
 SharpGLTF 1.0.5 Core is built from pinned source. Narrow changes remove unused
 JSON reflection roots and replace diagnostic property reflection with typed
 LogicalIndex access. JSON extras, extension data and deep cloning are retained.
+
+Managed compilation uses ILC `--noinlinetls` and rejects direct TPIDR_EL0
+thread-static accesses or TLS relocations in the generated object. Horizon uses
+libnx software TLS, so the runtime helper path is retained.
