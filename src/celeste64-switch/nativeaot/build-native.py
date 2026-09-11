@@ -26,6 +26,11 @@ for name in ('foster','romfs'):
     if target.exists():shutil.rmtree(target)
     shutil.copytree(source/name,target)
 for path in (out/'romfs').glob('*.dll'):path.unlink()
+managed_options = json.loads((managed/'build-options.json').read_text())
+if managed_options.get('framework_matrix_math'):
+    for name in ('switch_render_math.c', 'switch_matrix_pair.c', 'switch_srt_matrix.c'):
+        (out/'foster'/name).unlink()
+
 (out/'romfs/aot_config.ini').unlink(missing_ok=True)
 shutil.copy2(icu/'share/icu/77.1/icudt77l.dat',out/'romfs/icudt77l.dat')
 (out/'source').mkdir(exist_ok=True)
@@ -75,6 +80,6 @@ archive=root/'artifacts/nativeaot-builds'/manifest['nro_sha256']
 archive.mkdir(parents=True,exist_ok=True)
 for file in (out/'celeste64-switch.nro',out/'celeste64-switch.elf',
              out/'build/celeste64-switch.map',out/'nativeaot-link.json',
-             out/'build-options.json',managed/'stage.json',obj):
+             out/'build-options.json',managed/'stage.json',managed/'compile-manifest.json',obj):
     shutil.copy2(file,archive/file.name)
 print(out/'celeste64-switch.nro')

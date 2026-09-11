@@ -44,6 +44,16 @@ for key in ("aot_optimize", "mono_sdk_configuration", "aot_trampolines",
     options.pop(key, None)
 options.update(runtime_mode="NativeAOT", ilc_version="9.0.3",
                ilc_optimization="Speed", inline_thread_statics=False)
+# NativeAOT generates SIMD matrix code directly; the Mono preset retains its
+# native helpers. Describe only the source switches present in this build.
+import importlib.util
+spec = importlib.util.spec_from_file_location("framework_math", here / "framework-math.py")
+math_adapter = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(math_adapter)
+assert math_adapter.REMOVED <= set(options["source_optimizations"])
+math_adapter.apply(out / "managed")
+options["source_optimizations"] = [x for x in options["source_optimizations"] if x not in math_adapter.REMOVED]
+options["framework_matrix_math"] = True
 options_path.write_text(json.dumps(options, indent=2) + "\n")
 (out / "stage.json").write_text(json.dumps({
     "stage": "managed-nativeaot-compilation-only",
@@ -53,6 +63,7 @@ options_path.write_text(json.dumps(options, indent=2) + "\n")
     "horizon_runtime_validated": False,
     "fmod": "2.02.18",
     "entrypoint": "C64ManagedMain",
+    "framework_matrix_math": True,
 }, indent=2) + "\n")
 print(out, flush=True)
 
