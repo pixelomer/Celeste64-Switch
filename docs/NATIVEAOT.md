@@ -63,3 +63,11 @@ configuration without claiming general performance across every scene.
 FMOD integration retains buffer generation, output consumption, timeline
 behavior and clean shutdown in bounded integration checks. The full FMOD backend
 and renderer behavior otherwise remain unchanged.
+
+## Standalone runtime package
+
+A standalone SDK package produced by a compatible runtime fork can be used in
+place of a runtime checkout. Pass its unpacked directory to
+`--nativeaot-runtime`. The native build validates the package manifest and records
+the runtime source revision without requiring Git metadata in the package. Keep
+the runtime license files when distributing the game.
