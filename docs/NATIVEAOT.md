@@ -71,3 +71,9 @@ place of a runtime checkout. Pass its unpacked directory to
 `--nativeaot-runtime`. The native build validates the package manifest and records
 the runtime source revision without requiring Git metadata in the package. Keep
 the runtime license files when distributing the game.
+
+## Repository layout
+
+The application and Horizon runtime sources are maintained independently. This
+repository remains usable as a standalone application checkout when a compatible
+runtime or standalone SDK package is supplied.
