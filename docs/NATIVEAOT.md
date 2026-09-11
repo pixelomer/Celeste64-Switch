@@ -49,13 +49,17 @@ are generated locally alongside other ignored build outputs.
 
 ## Optimization decisions
 
-The production optimizations remain enabled. Controlled comparisons showed
-that simplified variants could retain the target frame rate in stationary
-scenes while substantially increasing update and render cost. Disabling selected
-caches and batching also increased allocation by orders of magnitude, so those
-optimizations remain part of the release configuration.
+NativeAOT replaces the Mono-specific native matrix workarounds with direct
+System.Numerics code generation. Representative scene comparisons remained
+within a few percent after this change, so the extra matrix interop layer is not
+used by the NativeAOT configuration. The Mono configuration retains its helpers.
 
-These comparisons guide the release configuration without claiming general
-performance across every scene. NativeAOT supplies its own optimizing backend,
-while the existing renderer and interop optimizations continue to cover other
-costs.
+Other caches, batching and data-preparation optimizations remain enabled.
+Controlled comparisons showed substantially higher update and render costs
+without them, together with allocation growth of more than two orders of
+magnitude in the heaviest observed case. These results guide the release
+configuration without claiming general performance across every scene.
+
+FMOD integration retains buffer generation, output consumption, timeline
+behavior and clean shutdown in bounded integration checks. The full FMOD backend
+and renderer behavior otherwise remain unchanged.
