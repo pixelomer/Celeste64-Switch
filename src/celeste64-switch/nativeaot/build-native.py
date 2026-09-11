@@ -5,6 +5,12 @@ import hashlib,json,os,re,shutil,subprocess
 here=Path(__file__).resolve().parent
 root=here.parents[2]
 runtime=Path(os.environ['NATIVEAOT_RUNTIME_ROOT']).resolve()
+if (runtime/'sdk-manifest.json').is_file():
+    validator=runtime/'src/coreclr/nativeaot/Runtime/libnx/validate-sdk.py'
+    runtime_revision=subprocess.check_output(['python3',str(validator),str(runtime)],text=True).strip()
+else:
+    runtime_revision=subprocess.check_output(['git','rev-parse','HEAD'],cwd=runtime,text=True).strip()
+
 icu=Path(os.environ.get('ICU_NX_INSTALL_DIR',str(root/'third_party/upstream/mono-nx/icu/libnx'))).resolve()
 dkp=Path(os.environ['DEVKITPRO'])
 source=root/'artifacts/celeste64-switch-v120-bootstrap'
@@ -70,7 +76,7 @@ env=os.environ|{'ICU_NX_INSTALL_DIR':str(icu)}
 with (out/'logs/native-build.log').open('w') as log:
     subprocess.run(['make','-j4'],cwd=out,env=env,stdout=log,stderr=subprocess.STDOUT,check=True)
 manifest={'port_commit':subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip(),
- 'runtime_commit':subprocess.check_output(['git','rev-parse','HEAD'],cwd=runtime,text=True).strip(),
+ 'runtime_commit':runtime_revision,
  'inputs_sha256':{str(p):hashlib.sha256(p.read_bytes()).hexdigest() for p in [obj,*native,*sorted(sdk.glob('*.dll')),here/'main.c',here/'build-native.py',out/'switch.ld']},
  'nro_sha256':hashlib.sha256((out/'celeste64-switch.nro').read_bytes()).hexdigest()}
 (out/'nativeaot-link.json').write_text(json.dumps(manifest,indent=2)+'\n')
