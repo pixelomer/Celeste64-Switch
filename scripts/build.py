@@ -43,6 +43,7 @@ if not a.skip_fetch:
     run([sys.executable, 'scripts/fetch.py'])
 run([sys.executable, 'scripts/download_fmod.py', *(['--archive-dir', a.fmod_dir] if a.fmod_dir else [])])
 run([sys.executable, 'src/celeste64-switch/audio/sdk.py'])
+run(['bash', 'src/celeste64-switch/compat-v120/bootstrap-shaders.sh'])
 run([sys.executable, 'src/celeste64-switch/renderer/build-mesa-thread.py', '--ensure'])
 if a.runtime == 'nativeaot':
     run(['bash', 'src/celeste64-switch/nativeaot/build-managed.sh'])
